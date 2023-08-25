@@ -1,6 +1,6 @@
 # flutter_ble_peripheral_central
 
-A new Flutter plugin project.
+"flutter_ble_peripheral_central plugin project"
 
 ## Introduction
 
