@@ -4,14 +4,19 @@ A new Flutter plugin project.
 
 ## Introduction
 
-This project is a starting point for a Flutter
-[plug-in package](https://flutter.dev/developing-packages/),
-a specialized package that includes platform-specific implementation code for
-Android and/or iOS.
+* This project is another initiative that is part of the process of exploring methods for data exchange between apps on cross-platforms using BLE.
 
-For help getting started with Flutter development, view the
-[online documentation](https://flutter.dev/docs), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+
+* The project was initiated with the intention of enabling the same functionality on iOS and Android within Flutter, 
+  by referencing the iOS/android native code from alexanderlavrushko's BLEProof-collection (https://github.com/alexanderlavrushko/BLEProof-collection) 
+  and creating the flutter_ble_peripheral_central plugin project. 
+
+
+* It operates on the latest versions of iOS and Android, and while it's straightforward for simple data exchange between apps via BLE, 
+  for more complex device control, we recommend utilizing well-established libraries that have been verified and widely used. 
+
+ 
+* Please note that the UUIDs and functionality lists are directly adopted from the BLEProof-collection.
 
 ## Setup
 
@@ -62,3 +67,55 @@ samples, guidance on mobile development, and a full API reference.
     <key>NSBluetoothPeripheralUsageDescription</key>
     <string>We use Bluetooth to show basic communication between Central and Peripheral</string>
     ````
+
+## Usage
+```dart
+import 'package:flutter_ble_peripheral_central/flutter_ble_peripheral_central.dart';
+
+//plugin instance 
+final  _flutterBlePeripheralCentralPlugin = FlutterBlePeripheralCentral();
+
+//getPlatformVersion
+var platformVersion = await _flutterBlePeripheralCentralPlugin.getPlatformVersion();
+
+//작성중
+
+
+
+```
+## Reference
+* alexanderlavrushko's BLEProof-collection Url: https://github.com/alexanderlavrushko/BLEProof-collection/
+
+### Table of UUIDs
+Name | UUID
+----- | ---------------
+Service | 25AE1441-05D3-4C5B-8281-93D4E07420CF
+Characteristic for read | 25AE1442-05D3-4C5B-8281-93D4E07420CF
+Characteristic for write | 25AE1443-05D3-4C5B-8281-93D4E07420CF
+Characteristic for indicate | 25AE1444-05D3-4C5B-8281-93D4E07420CF
+
+### BLE Peripheral (all platforms)
+
+Peripheral (also called Slave or Server) works similarly on all platforms:
+* Advertises a service with our UUID (see Table of UUIDs)
+  * The service contains 3 characteristics:
+      * for read - has only read permission (see Table of UUIDs)
+      * for write - has only write permission (see Table of UUIDs)
+      * for indication - supports only indications (see Table of UUIDs)
+  * Allows the user to change the string value of the characteristic for read
+  * Allows the user to change the string value of the characteristic for indicate
+  * Allows the user to send an indication with updated string value to the connected Central
+
+Note 1: technically characteristics can have any amount of permissions (read, write default, write without response, notify, indicate), but in this project each characteristic has only one permission for simplicity.
+
+Note 2: indication is a notification with response - Peripheral notifies, Central confirms that notification received.
+
+### BLE Central (all platforms)
+Central (also called Master or Client) works similarly on all platforms:
+* Scans for Peripherals which have a service with our UUID (see Table of UUIDs)
+  * Connects to the first found Peripheral
+  * Discovers services and characteristics of the connected Peripheral
+  * Subscribes to indications of the "Characteristic for indicate" (see Table of UUIDs)
+  * Allows the user to disconnect from Peripheral
+  * Allows the user to read a characteristic value (string) from Peripheral
+  * Allows the user to write a characteristic value (string) to Peripheral
