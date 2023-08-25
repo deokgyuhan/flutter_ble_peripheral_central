@@ -47,6 +47,8 @@ class _MyAppState extends State<MyApp> {
     });
   }
 
+  var _eventSubscription;
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -55,7 +57,24 @@ class _MyAppState extends State<MyApp> {
           title: const Text('Plugin example app'),
         ),
         body: Center(
-          child: Text('Running on: $_platformVersion\n'),
+          child: Column(
+            children: [
+              Text('Running on: $_platformVersion\n'),
+              SizedBox(height: 5),
+              ElevatedButton(
+                  onPressed: () async {
+                    _eventSubscription = _flutterBlePeripheralCentralPlugin.startBlePeripheralSearvice().listen((event) {
+                      print('----------------------->start event: ${event}');
+
+                      if(event == 'stopAdvertising') {
+                        _eventSubscription?.cancel();
+                      }
+                    });
+                  },
+                  child: Text('start')
+              ),
+            ],
+          ),
         ),
       ),
     );

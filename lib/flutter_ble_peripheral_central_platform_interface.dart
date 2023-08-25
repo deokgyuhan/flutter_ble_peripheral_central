@@ -26,4 +26,36 @@ abstract class FlutterBlePeripheralCentralPlatform extends PlatformInterface {
   Future<String?> getPlatformVersion() {
     throw UnimplementedError('platformVersion() has not been implemented.');
   }
+
+  // peripheral begin
+  Stream<dynamic> startBlePeripheralSearvice() {
+    throw UnimplementedError('platformVersion() has not been implemented.');
+  }
+
+  Future<String?> sendIndicate() {
+    throw UnimplementedError('platformVersion() has not been implemented.');
+  }
+
+  Future<String?> stopBlePeripheralSearvice() {
+    throw UnimplementedError('platformVersion() has not been implemented.');
+  }
+  // peripheral end
+
+  // central begin
+  Stream<dynamic> scanAndConnect() {
+    throw UnimplementedError('platformVersion() has not been implemented.');
+  }
+
+  Future<String?> bleReadCharacteristic() {
+    throw UnimplementedError('platformVersion() has not been implemented.');
+  }
+
+  Future<String?> bleWriteCharacteristic() {
+    throw UnimplementedError('platformVersion() has not been implemented.');
+  }
+
+  Future<String?> bleDisconnect() {
+    throw UnimplementedError('platformVersion() has not been implemented.');
+  }
+  // central end
 }
