@@ -28,8 +28,8 @@ class MethodChannelFlutterBlePeripheralCentral extends FlutterBlePeripheralCentr
     return eventChannelOfPeripheral.receiveBroadcastStream();
   }
 
-  Future<String?> sendIndicate() async {
-    final result = await methodChannelOfPeripheral.invokeMethod<String>('sendIndicate');
+  Future<String?> sendIndicate(String sendData) async {
+    final result = await methodChannelOfPeripheral.invokeMethod<String>('sendIndicate', <String, dynamic>{'sendData': sendData});
     return result;
   }
 
@@ -49,8 +49,8 @@ class MethodChannelFlutterBlePeripheralCentral extends FlutterBlePeripheralCentr
     return result;
   }
 
-  Future<String?> bleWriteCharacteristic() async {
-    final result = await methodChannelOfCentral.invokeMethod<String>('bleWriteCharacteristic');
+  Future<String?> bleWriteCharacteristic(String sendData) async {
+    final result = await methodChannelOfCentral.invokeMethod<String>('bleWriteCharacteristic', <String, dynamic>{'sendData': sendData});
     return result;
   }
 

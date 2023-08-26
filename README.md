@@ -74,12 +74,23 @@ import 'package:flutter_ble_peripheral_central/flutter_ble_peripheral_central.da
 
 //plugin instance 
 final  _flutterBlePeripheralCentralPlugin = FlutterBlePeripheralCentral();
-
+ 
 //getPlatformVersion
 var platformVersion = await _flutterBlePeripheralCentralPlugin.getPlatformVersion();
 
-//작성중
+//peripheral mode
+//startBlePeripheralSearvice -> start advertising
+var _eventSubscription;
+_eventSubscription = await _flutterBlePeripheralCentralPlugin.startBlePeripheralSearvice().listen((event) {
+ print('----------------------->start event: ${event}');
+ if(event == 'stopAdvertising') {
+   _eventSubscription?.cancel();
+  }
+ });
 
+// sendIndicate
+var sendData = 'send data call';
+var result = await _flutterBlePeripheralCentralPlugin.sendIndicate(sendData);
 
 
 ```

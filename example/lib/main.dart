@@ -1,8 +1,9 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'dart:async';
-
 import 'package:flutter/services.dart';
 import 'package:flutter_ble_peripheral_central/flutter_ble_peripheral_central.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 void main() {
   runApp(const MyApp());
@@ -22,6 +23,7 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
+    _permissionCheck();
     initPlatformState();
   }
 
@@ -78,5 +80,25 @@ class _MyAppState extends State<MyApp> {
         ),
       ),
     );
+  }
+
+  void _permissionCheck() async {
+      if (Platform.isAndroid) {
+        var permission = await Permission.location.request();
+        var bleScan = await Permission.bluetoothScan.request();
+        var bleConnect = await Permission.bluetoothConnect.request();
+        var bleAdvertise = await Permission.bluetoothAdvertise.request();
+
+        // var locationAlways = await Permission.locationAlways.request();
+        var locationWhenInUse = await Permission.locationWhenInUse.request();
+
+        print('location permission: ${permission.isGranted}');
+        // print('location locationAlways: ${locationAlways.isGranted}');
+        print('location locationWhenInUse: ${locationWhenInUse.isGranted}');
+
+        print('bleScan permission: ${bleScan.isGranted}');
+        print('bleConnect permission: ${bleConnect.isGranted}');
+        print('bleAdvertise permission: ${bleAdvertise.isGranted}');
+      }
   }
 }

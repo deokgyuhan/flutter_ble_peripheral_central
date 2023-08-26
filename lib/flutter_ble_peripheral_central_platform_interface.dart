@@ -32,7 +32,7 @@ abstract class FlutterBlePeripheralCentralPlatform extends PlatformInterface {
     throw UnimplementedError('platformVersion() has not been implemented.');
   }
 
-  Future<String?> sendIndicate() {
+  Future<String?> sendIndicate(String sendData) {
     throw UnimplementedError('platformVersion() has not been implemented.');
   }
 
@@ -50,7 +50,7 @@ abstract class FlutterBlePeripheralCentralPlatform extends PlatformInterface {
     throw UnimplementedError('platformVersion() has not been implemented.');
   }
 
-  Future<String?> bleWriteCharacteristic() {
+  Future<String?> bleWriteCharacteristic(String sendData) {
     throw UnimplementedError('platformVersion() has not been implemented.');
   }
 

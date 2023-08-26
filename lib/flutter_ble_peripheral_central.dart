@@ -11,8 +11,8 @@ class FlutterBlePeripheralCentral {
     return FlutterBlePeripheralCentralPlatform.instance.startBlePeripheralSearvice();
   }
 
-  Future<String?> sendIndicate() {
-    return FlutterBlePeripheralCentralPlatform.instance.sendIndicate();
+  Future<String?> sendIndicate(String sendData) {
+    return FlutterBlePeripheralCentralPlatform.instance.sendIndicate(sendData);
   }
 
   Future<String?> stopBlePeripheralSearvice() {
@@ -29,8 +29,8 @@ class FlutterBlePeripheralCentral {
     return FlutterBlePeripheralCentralPlatform.instance.bleReadCharacteristic();
   }
 
-  Future<String?> bleWriteCharacteristic() {
-    return FlutterBlePeripheralCentralPlatform.instance.bleWriteCharacteristic();
+  Future<String?> bleWriteCharacteristic(String sendData) {
+    return FlutterBlePeripheralCentralPlatform.instance.bleWriteCharacteristic(sendData);
   }
 
   Future<String?> bleDisconnect() {

@@ -35,10 +35,9 @@ class BlePeripheralService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == "startBlePeripheralService") {
-//            eventSink?.success("onStartCommand")
             eventSink = EventSinkHolderOfPeripheral.eventSink
-//            sendData = intent?.getStringExtra("ADDITIONAL_DATA").toString()
             startBlePeripheralSearvice()
+//            eventSink?.success("onStartCommand  startBlePeripheralService call")
         } else if(intent?.action == "sendIndicate") {
             methodResult = MethodResultHolderOfPeripheral.methodResult
             sendData = intent?.getStringExtra("ADDITIONAL_DATA").toString()
@@ -48,11 +47,11 @@ class BlePeripheralService : Service() {
             stopBlePeripheralSearvice()
         }
 
-
         return START_STICKY
     }
 
     private fun startBlePeripheralSearvice() {
+//        eventSink?.success("startBlePeripheralSearvice call")
         prepareAndStartAdvertising()
     }
 
@@ -79,7 +78,9 @@ class BlePeripheralService : Service() {
     }
 
     private fun prepareAndStartAdvertising() {
+//        eventSink?.success("prepareAndStartAdvertising call")
         ensureBluetoothCanBeUsed { isSuccess, message ->
+//            eventSink?.success("ensureBluetoothCanBeUsed result: " + isSuccess)
             handler.post {
                 eventSink?.success(message)
                 if (isSuccess) {
@@ -165,7 +166,7 @@ class BlePeripheralService : Service() {
 
     private val advertiseCallback = object : AdvertiseCallback() {
         override fun onStartSuccess(settingsInEffect: AdvertiseSettings) {
-            println("Advertise start success\n$SERVICE_UUID")
+            eventSink?.success("Advertise start success\n$SERVICE_UUID")
         }
 
         override fun onStartFailure(errorCode: Int) {
@@ -177,7 +178,7 @@ class BlePeripheralService : Service() {
                 ADVERTISE_FAILED_FEATURE_UNSUPPORTED -> "\nADVERTISE_FAILED_FEATURE_UNSUPPORTED"
                 else -> ""
             }
-            println("Advertise start failed: errorCode=$errorCode $desc")
+            eventSink?.success("Advertise start failed: errorCode=$errorCode $desc")
             isAdvertising = false
         }
     }
@@ -192,12 +193,9 @@ class BlePeripheralService : Service() {
         override fun onConnectionStateChange(device: BluetoothDevice, status: Int, newState: Int) {
             handler.post {
                 if (newState == BluetoothProfile.STATE_CONNECTED) {
-                    eventSink?.success("connected")
-                    println("Central did connect")
+                    eventSink?.success("connected \nCentral did connect")
                 } else {
-                    eventSink?.success("disconnected")
-                    println("Central did disconnect")
-
+                    eventSink?.success("disconnected\nCentral did disconnect")
                     subscribedDevices.remove(device)
                 }
             }
@@ -213,8 +211,7 @@ class BlePeripheralService : Service() {
             handler.post {
                 var log: String = "onCharacteristicRead offset=$offset"
                 if (characteristic.uuid == UUID.fromString(CHAR_FOR_READ_UUID)) {
-//                    val strValue = editTextCharForRead.text.toString()
-//                    gattServer?.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, 0, strValue.toByteArray(Charsets.UTF_8))
+
                     gattServer?.sendResponse(
                         device,
                         requestId,
@@ -222,9 +219,6 @@ class BlePeripheralService : Service() {
                         0,
                         sendData.toByteArray(Charsets.UTF_8)
                     )
-
-//                    log += "\nresponse=success, value=\"$strValue\""
-//                    appendLog(log)
                 } else {
                     gattServer?.sendResponse(device, requestId, BluetoothGatt.GATT_FAILURE, 0, null)
                     log += "\nresponse=failure, unknown UUID\n${characteristic.uuid}"
@@ -318,7 +312,6 @@ class BlePeripheralService : Service() {
                     if (responseNeeded) {
                         gattServer?.sendResponse(device, requestId, status, 0, null)
                     }
-//                updateSubscribersUI()
                 } else {
                     strLog += " unknown uuid=${descriptor.uuid}"
                     if (responseNeeded) {
@@ -346,25 +339,8 @@ class BlePeripheralService : Service() {
     private var activityResultHandlers = mutableMapOf<Int, (Int) -> Unit>()
     private var permissionResultHandlers = mutableMapOf<Int, (Array<out String>, IntArray) -> Unit>()
 
-//    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-//        super.onActivityResult(requestCode, resultCode, data)
-//        activityResultHandlers[requestCode]?.let { handler ->
-//            handler(resultCode)
-//        } ?: run {
-//            println("Error: onActivityResult requestCode=$requestCode result=$resultCode not handled")
-//        }
-//    }
-//
-//    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
-//        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-//        permissionResultHandlers[requestCode]?.let { handler ->
-//            handler(permissions, grantResults)
-//        } ?: run {
-//            println("Error: onRequestPermissionsResult requestCode=$requestCode not handled")
-//        }
-//    }
-
     private fun ensureBluetoothCanBeUsed(completion: (Boolean, String) -> Unit) {
+//        eventSink?.success("ensureBluetoothCanBeUsed call")
         grantBluetoothPeripheralPermissions(AskType.AskOnce) { isGranted ->
             if (!isGranted) {
                 completion(false, "Bluetooth permissions denied")
@@ -397,16 +373,14 @@ class BlePeripheralService : Service() {
                     completion(isSuccess)
                 } else {
                     // start activity for the request again
-//                    startActivityForResult(Intent(intentString), requestCode)
+                    //
                 }
             }
-
-            // start activity for the request
-//            startActivityForResult(Intent(intentString), requestCode)
         }
     }
 
     private fun grantBluetoothPeripheralPermissions(askType: AskType, completion: (Boolean) -> Unit) {
+//        eventSink?.success("grantBluetoothPeripheralPermissions call")
         val wantedPermissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             arrayOf(
                 Manifest.permission.BLUETOOTH_CONNECT,
@@ -419,7 +393,6 @@ class BlePeripheralService : Service() {
         if (wantedPermissions.isEmpty()|| hasPermissions(wantedPermissions)) {
             completion(true)
         } else {
-//            runOnUiThread {
                 val requestCode = BLUETOOTH_ALL_PERMISSIONS_REQUEST_CODE
 
                 // set permission result handler
@@ -430,12 +403,9 @@ class BlePeripheralService : Service() {
                         completion(isSuccess)
                     } else {
                         // request again
-//                        requestPermissionArray(wantedPermissions, requestCode)
+                        //
                     }
                 }
-
-//                requestPermissionArray(wantedPermissions, requestCode)
-//            }
         }
     }
 
@@ -446,46 +416,6 @@ class BlePeripheralService : Service() {
     private fun Activity.requestPermissionArray(permissions: Array<String>, requestCode: Int) {
         ActivityCompat.requestPermissions(this, permissions, requestCode)
     }
-
-//    override fun onListen(arguments: Any?, sink: EventChannel.EventSink?) {
-//        eventSink = sink
-//
-//        startBlePeripheralSearvice()
-//    }
-//
-//    override fun onCancel(arguments: Any?) {
-//        eventSink = null
-//    }
-//
-//    override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
-//        if(call.method == "initData") {
-//            val initData = call.argument<String>("initData")
-//            if (initData != null) {
-//                println("onMethodCall->ininData-------->" + initData)
-//                initData(initData)
-//                result.success("success")
-//            } else {
-//                result.success("failure")
-//            }
-//        }
-//        else if(call.method == "sendIndicate") {
-//            val sendData = call.argument<String>("sendData")
-//            if (sendData != null) {
-//                println("onMethodCall->sendIndicate-------->" + sendData)
-//                sendIndicate(sendData)
-//                result.success("success")
-//            } else {
-//                result.success("failure")
-//            }
-//        }
-//        else if(call.method == "stopBlePeripheralSearvice") {
-//            println("onMethodCall->stopBlePeripheralSearvice-------->")
-//            stopBlePeripheralSearvice()
-//            result.success("success")
-//        } else {
-//            result.success("failure")
-//        }
-//    }
 
     override fun onBind(p0: Intent?): IBinder? {
         TODO("Not yet implemented")

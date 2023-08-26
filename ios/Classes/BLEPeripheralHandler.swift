@@ -35,13 +35,19 @@ class BLEPeripheralHandler: NSObject, FlutterPlugin {
     }
 }
 
-// MARK: - FlutterMethodCallDelegate
+//  FlutterMethodCallDelegate
 extension BLEPeripheralHandler {
     func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
         switch call.method {
         case "sendIndicate":
-            bleSendIndication("sendIndicate test")
-            result("BLE advertising started")
+            if let args = call.arguments as? Dictionary<String, Any>,
+                let text = args["sendData"] as? String {
+                let data = text.data(using: .utf8) ?? Data()
+                bleSendIndication(text)
+                result("BLE sendIndicate")
+              } else {
+                result(FlutterError.init(code: "errorSetDebug", message: "data or format error", details: nil))
+              }
         case "stopBlePeripheralSearvice":
             bleStopAdvertising()
             result("BLE advertising stopped")
@@ -73,7 +79,7 @@ extension BLEPeripheralHandler: FlutterStreamHandler {
     }
 }
 
-// MARK: - BLE related methods
+// BLE related methods
 extension BLEPeripheralHandler {
 
     func initBLE() {
@@ -145,7 +151,7 @@ extension BLEPeripheralHandler {
     }
 }
 
-// MARK: - CBPeripheralManagerDelegate
+// CBPeripheralManagerDelegate
 extension BLEPeripheralHandler: CBPeripheralManagerDelegate {
     func peripheralManagerDidUpdateState(_ peripheral: CBPeripheralManager) {
         print("didUpdateState: \(peripheral.state.stringValueOfPeripheral)")
@@ -162,7 +168,6 @@ extension BLEPeripheralHandler: CBPeripheralManagerDelegate {
         } else {
             sink?("didStartAdvertising: success")
         }
-//        updateUIAdvertising()
     }
 
     func peripheralManager(_ peripheral: CBPeripheralManager, didAdd service: CBService, error: Error?) {
@@ -236,7 +241,7 @@ extension BLEPeripheralHandler: CBPeripheralManagerDelegate {
     }
 }
 
-// MARK: - Other extensions
+// CBManagerState
 extension CBManagerState {
     var stringValueOfPeripheral: String {
         switch self {

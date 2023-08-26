@@ -37,10 +37,6 @@ class BLECentralHandler: NSObject, FlutterPlugin {
             guard lifecycleState != oldValue else { return }
             appendLog("state = \(lifecycleState)")
             sink?("state = \(lifecycleState)")
-
-            if oldValue == .connected {
-//                labelSubscription.text = "Not subscribed"
-            }
         }
     }
 
@@ -60,8 +56,7 @@ class BLECentralHandler: NSObject, FlutterPlugin {
     }
 }
 
-
-// MARK: - FlutterMethodCallDelegate
+//  FlutterMethodCallDelegate
 extension BLECentralHandler {
     func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
         switch call.method {
@@ -69,14 +64,10 @@ extension BLECentralHandler {
             userWantsToScanAndConnect = true
             bleReadCharacteristic(uuid: uuidCharForRead)
             current_result = result
-//            result("BLE Read Characteristic")
         case "bleWriteCharacteristic":
             userWantsToScanAndConnect = true
             if let args = call.arguments as? Dictionary<String, Any>,
                 let text = args["sendData"] as? String {
-                  // please check the "as" above  - wasn't able to test
-                  // handle the method
-
                 let data = text.data(using: .utf8) ?? Data()
                 bleWriteCharacteristic(uuid: uuidCharForWrite, data: data)
                 result("BLE Write Characteristic")
@@ -112,7 +103,6 @@ extension BLECentralHandler: FlutterStreamHandler {
 
     func onCancel(withArguments arguments: Any?) -> FlutterError? {
         sink = nil
-        //bleStopAdvertising()
         appendLog("onCancel Call....");
         sink?("onCancel Call....");
         return nil
@@ -120,11 +110,6 @@ extension BLECentralHandler: FlutterStreamHandler {
 }
 
 extension BLECentralHandler {
-
-    func startBLECentral() {
-
-    }
-
     /*
      Swift에서 함수를 호출할 때는 매개변수 이름과 함께 값을 전달하는것이 기본 형태임.
 
@@ -145,7 +130,7 @@ extension BLECentralHandler {
     }
 }
 
-// MARK: - BLE related methods
+// BLE related methods
 extension BLECentralHandler {
     private func initBLE() {
         // using DispatchQueue.main means we can update UI directly from delegate methods
@@ -239,7 +224,7 @@ extension BLECentralHandler {
     }
 }
 
-// MARK: - CBCentralManagerDelegate
+//CBCentralManagerDelegate
 extension BLECentralHandler: CBCentralManagerDelegate {
     func centralManagerDidUpdateState(_ central: CBCentralManager) {
         appendLog("central didUpdateState: \(central.state.stringValueOfCentral)")
@@ -357,11 +342,7 @@ extension BLECentralHandler: CBPeripheralDelegate {
 
         let data = characteristic.value ?? Data()
         let stringValue = String(data: data, encoding: .utf8) ?? ""
-        if characteristic.uuid == uuidCharForRead {
-//            textFieldDataForRead.text = stringValue
-        } else if characteristic.uuid == uuidCharForIndicate {
-//            textFieldDataForIndicate.text = stringValue
-        }
+
         appendLog("didUpdateValue '\(stringValue)'")
         sink?("didUpdateValue '\(stringValue)'")
         current_result?("didUpdateValue '\(stringValue)'")
@@ -388,16 +369,14 @@ extension BLECentralHandler: CBPeripheralDelegate {
 
         if characteristic.uuid == uuidCharForIndicate {
             let info = characteristic.isNotifying ? "Subscribed" : "Not subscribed"
-//            labelSubscription.text = info
             appendLog(info)
-
             sink?(info)
         }
         lifecycleState = .connected
     }
 }
 
-// MARK: - Other extensions
+// CBManagerState
 extension CBManagerState {
     var stringValueOfCentral: String {
         switch self {

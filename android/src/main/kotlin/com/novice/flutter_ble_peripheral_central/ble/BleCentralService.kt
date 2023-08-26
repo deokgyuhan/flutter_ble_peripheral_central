@@ -41,7 +41,6 @@ class BleCentralService: Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == "startCentralSearvice") {
             eventSink = EventSinkHolderOfCentral.eventSink
-            sendData = intent?.getStringExtra("ADDITIONAL_DATA").toString()
 
             val filter = IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED)
             registerReceiver(bleOnOffListener, filter)
@@ -49,7 +48,6 @@ class BleCentralService: Service() {
 
         } else if(intent?.action == "bleReadCharacteristic") {
             methodResult = MethodResultHolderOfCentral.methodResult
-            //sendData = intent?.getStringExtra("ADDITIONAL_DATA").toString()
             bleReadCharacteristic()
         } else if(intent?.action == "bleWriteCharacteristic") {
             methodResult = MethodResultHolderOfCentral.methodResult
@@ -122,16 +120,10 @@ class BleCentralService: Service() {
         set(value) {
             field = value
             eventSink?.success("status = $value")
-            handler.post {
-                //textViewLifecycleState.text = "State: ${value.name}"
-                if (value != BLELifecycleState.Connected) {
-                  //  textViewSubscription.text = getString(R.string.text_not_subscribed)
-                }
-            }
         }
 
     private val userWantsToScanAndConnect = true //switchConnect.isChecked
-    private var isScanning = false //처음 시작할때는 false
+    private var isScanning = false //when app is first starting, isScanning value is false
     private var connectedGatt: BluetoothGatt? = null
     private var characteristicForRead: BluetoothGattCharacteristic? = null
     private var characteristicForWrite: BluetoothGattCharacteristic? = null
@@ -162,7 +154,7 @@ class BleCentralService: Service() {
     }
 
     private fun bleRestartLifecycle() {
-        eventSink?.success("BleCentralService bleRestartLifecycle  call")
+//        eventSink?.success("BleCentralService bleRestartLifecycle  call")
         prepareAndStartBleScan()
 
         handler.post {
@@ -179,8 +171,7 @@ class BleCentralService: Service() {
     }
 
     private fun prepareAndStartBleScan() {
-        eventSink?.success("BleCentralService prepareAndStartBleScan  call")
-
+//        eventSink?.success("BleCentralService prepareAndStartBleScan  call")
         ensureBluetoothCanBeUsed() { isSuccess, message ->
             eventSink?.success(message)
             if (isSuccess) {
@@ -190,7 +181,7 @@ class BleCentralService: Service() {
     }
 
     private fun safeStartBleScan() {
-        eventSink?.success("BleCentralService safeStartBleScan  call")
+//        eventSink?.success("BleCentralService safeStartBleScan  call")
         if (isScanning) {
             eventSink?.success("Already scanning")
             return
@@ -499,7 +490,6 @@ class BleCentralService: Service() {
         }
     }
 
-
     private fun ensureBluetoothCanBeUsed(completion: (Boolean, String) -> Unit) {
 
         eventSink?.success("BleCentralService ensureBluetoothCanBeUsed  call")
@@ -516,14 +506,6 @@ class BleCentralService: Service() {
                     return@enableBluetooth
                 }
 
-//                grantLocationPermissionIfRequired(AskType.AskOnce) { isGranted ->
-//                    if (!isGranted) {
-//                        completion(false, "Location permission denied")
-//                        return@grantLocationPermissionIfRequired
-//                    }
-//
-//                    completion(true, "Bluetooth ON, permissions OK, ready")
-//                }
                 completion(true, "Bluetooth ON, permissions OK, ready")
             }
         }
@@ -544,12 +526,9 @@ class BleCentralService: Service() {
                     completion(isSuccess)
                 } else {
                     // start activity for the request again
-//                    startActivityForResult(Intent(intentString), requestCode)
+                    //
                 }
             }
-
-            // start activity for the request
-//            startActivityForResult(Intent(intentString), requestCode)
         }
     }
 
@@ -564,15 +543,6 @@ class BleCentralService: Service() {
             handler.post {
                 val requestCode = LOCATION_PERMISSION_REQUEST_CODE
 
-                // prepare motivation message
-//                val builder = AlertDialog.Builder(this)
-//                builder.setTitle("Location permission required")
-//                builder.setMessage("BLE advertising requires location access, starting from Android 6.0")
-//                builder.setPositiveButton(android.R.string.ok) { _, _ ->
-//                    requestPermissionArray(wantedPermissions, requestCode)
-//                }
-//                builder.setCancelable(false)
-
                 // set permission result handler
                 permissionResultHandlers[requestCode] = { permissions, grantResults ->
                     val isSuccess = grantResults.firstOrNull() != PackageManager.PERMISSION_DENIED
@@ -581,12 +551,9 @@ class BleCentralService: Service() {
                         completion(isSuccess)
                     } else {
                         // show motivation message again
-//                        builder.create().show()
+                        //
                     }
                 }
-
-                // show motivation message
-//                builder.create().show()
             }
         }
     }
@@ -617,11 +584,9 @@ class BleCentralService: Service() {
                         completion(isSuccess)
                     } else {
                         // request again
-//                        requestPermissionArray(wantedPermissions, requestCode)
+                        //
                     }
                 }
-
-//                requestPermissionArray(activity, wantedPermissions, requestCode)
             }
         }
     }

@@ -61,7 +61,6 @@ class FlutterBlePeripheralCentralPlugin : FlutterPlugin, MethodCallHandler, Acti
 
     override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {
         activity = binding.activity
-        initService()
     }
 
     override fun onAttachedToActivity(binding: ActivityPluginBinding) {
@@ -95,7 +94,6 @@ class FlutterBlePeripheralCentralPlugin : FlutterPlugin, MethodCallHandler, Acti
             override fun onListen(p0: Any?, eventSink: EventChannel.EventSink) {
                 EventSinkHolderOfPeripheral.eventSink = eventSink
                 intent.action = "startBlePeripheralService"
-                intent.putExtra("ADDITIONAL_DATA", "test")
                 activity?.startService(intent)
             }
 
@@ -109,7 +107,6 @@ class FlutterBlePeripheralCentralPlugin : FlutterPlugin, MethodCallHandler, Acti
             override fun onListen(p0: Any?, eventSink: EventChannel.EventSink) {
                 EventSinkHolderOfCentral.eventSink = eventSink
                 intent.action = "startCentralService"
-                intent.putExtra("ADDITIONAL_DATA", "test")
                 activity?.startService(intent)
             }
 

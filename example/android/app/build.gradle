@@ -24,7 +24,7 @@ if (flutterVersionName == null) {
 
 android {
     namespace "com.novice.flutter_ble_peripheral_central_example"
-    compileSdkVersion flutter.compileSdkVersion
+    compileSdk 33
     ndkVersion flutter.ndkVersion
 
     compileOptions {
@@ -58,6 +58,7 @@ android {
             signingConfig signingConfigs.debug
         }
     }
+    buildToolsVersion '33.0.0'
 }
 
 flutter {
