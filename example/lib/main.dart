@@ -66,7 +66,7 @@ class _MyAppState extends State<MyApp> {
               ElevatedButton(
                   onPressed: () async {
                     _eventSubscription = _flutterBlePeripheralCentralPlugin.startBlePeripheralSearvice().listen((event) {
-                      print('----------------------->start event: ${event}');
+                      print('----------------------->event: ${event}');
 
                       if(event == 'stopAdvertising') {
                         _eventSubscription?.cancel();
@@ -74,6 +74,16 @@ class _MyAppState extends State<MyApp> {
                     });
                   },
                   child: Text('start')
+              ),
+              SizedBox(height: 10,),
+              ElevatedButton(
+                  onPressed: () async {
+                    _eventSubscription = _flutterBlePeripheralCentralPlugin.scanAndConnect().listen((event) {
+                      print('----------------------->event: ${event}');
+
+                    });
+                  },
+                  child: Text('scan and connect')
               ),
             ],
           ),

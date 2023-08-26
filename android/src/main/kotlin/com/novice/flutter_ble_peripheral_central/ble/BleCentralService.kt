@@ -39,7 +39,7 @@ class BleCentralService: Service() {
     private var sendData = ""
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (intent?.action == "startCentralSearvice") {
+        if (intent?.action == "startCentralService") {
             eventSink = EventSinkHolderOfCentral.eventSink
 
             val filter = IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED)
