@@ -83,6 +83,7 @@ class _MyAppState extends State<MyApp> {
   }
 
   void _permissionCheck() async {
+      //android의 경우 ble 권한과 함께 위치 권한 필요(android 12이상부터는 근처기기 권한까지 포함)
       if (Platform.isAndroid) {
         var permission = await Permission.location.request();
         var bleScan = await Permission.bluetoothScan.request();
