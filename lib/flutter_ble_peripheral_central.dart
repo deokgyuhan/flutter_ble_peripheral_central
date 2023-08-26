@@ -7,16 +7,16 @@ class FlutterBlePeripheralCentral {
   }
 
   // peripheral begin
-  Stream<dynamic> startBlePeripheralSearvice()  {
-    return FlutterBlePeripheralCentralPlatform.instance.startBlePeripheralSearvice();
+  Stream<dynamic> startBlePeripheralService()  {
+    return FlutterBlePeripheralCentralPlatform.instance.startBlePeripheralService();
   }
 
   Future<String?> sendIndicate(String sendData) {
     return FlutterBlePeripheralCentralPlatform.instance.sendIndicate(sendData);
   }
 
-  Future<String?> stopBlePeripheralSearvice() {
-    return FlutterBlePeripheralCentralPlatform.instance.stopBlePeripheralSearvice();
+  Future<String?> stopBlePeripheralService() {
+    return FlutterBlePeripheralCentralPlatform.instance.stopBlePeripheralService();
   }
   // peripheral end
 

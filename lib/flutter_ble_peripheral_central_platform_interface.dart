@@ -28,7 +28,7 @@ abstract class FlutterBlePeripheralCentralPlatform extends PlatformInterface {
   }
 
   // peripheral begin
-  Stream<dynamic> startBlePeripheralSearvice() {
+  Stream<dynamic> startBlePeripheralService() {
     throw UnimplementedError('platformVersion() has not been implemented.');
   }
 
@@ -36,7 +36,7 @@ abstract class FlutterBlePeripheralCentralPlatform extends PlatformInterface {
     throw UnimplementedError('platformVersion() has not been implemented.');
   }
 
-  Future<String?> stopBlePeripheralSearvice() {
+  Future<String?> stopBlePeripheralService() {
     throw UnimplementedError('platformVersion() has not been implemented.');
   }
   // peripheral end

@@ -42,7 +42,7 @@ class BlePeripheralService : Service() {
             methodResult = MethodResultHolderOfPeripheral.methodResult
             sendData = intent?.getStringExtra("ADDITIONAL_DATA").toString()
             sendIndicate(sendData)
-        } else if(intent?.action == "stopBlePeripheralSearvice") {
+        } else if(intent?.action == "stopBlePeripheralService") {
             methodResult = MethodResultHolderOfPeripheral.methodResult
             stopBlePeripheralSearvice()
         }

@@ -24,7 +24,7 @@ class MethodChannelFlutterBlePeripheralCentral extends FlutterBlePeripheralCentr
   }
 
   // peripheral begin
-  Stream<dynamic> startBlePeripheralSearvice()  {
+  Stream<dynamic> startBlePeripheralService()  {
     return eventChannelOfPeripheral.receiveBroadcastStream();
   }
 
@@ -33,8 +33,8 @@ class MethodChannelFlutterBlePeripheralCentral extends FlutterBlePeripheralCentr
     return result;
   }
 
-  Future<String?> stopBlePeripheralSearvice() async {
-    final result = await methodChannelOfPeripheral.invokeMethod<String>('stopBlePeripheralSearvice');
+  Future<String?> stopBlePeripheralService() async {
+    final result = await methodChannelOfPeripheral.invokeMethod<String>('stopBlePeripheralService');
     return result;
   }
   // peripheral end
