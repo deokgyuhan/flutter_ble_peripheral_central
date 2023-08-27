@@ -79,21 +79,39 @@ final  _flutterBlePeripheralCentralPlugin = FlutterBlePeripheralCentral();
 var platformVersion = await _flutterBlePeripheralCentralPlugin.getPlatformVersion();
 
 //peripheral mode
-//startBlePeripheralSearvice -> start advertising
+//start advertising
 var _eventSubscription;
 _eventSubscription = await _flutterBlePeripheralCentralPlugin.startBlePeripheralSearvice().listen((event) {
- print('----------------------->start event: ${event}');
- if(event == 'stopAdvertising') {
-   _eventSubscription?.cancel();
-  }
+//handle event 
+// ....
  });
 
-// sendIndicate
+//sendIndicate
 var sendData = 'send data call';
 var result = await _flutterBlePeripheralCentralPlugin.sendIndicate(sendData);
 
+//stop advertising
+await _flutterBlePeripheralCentralPlugin.stopBlePeripheralService();
 
+//central mode
+//scan and autoconnect
+var _eventSubscription;
+_eventSubscription = await _flutterBlePeripheralCentralPlugin.scanAndConnect().listen((event) {
+// handle event 
+// ....
+});
+
+//disconnect
+await _flutterBlePeripheralCentralPlugin.bleDisconnect();
+
+//read characteristic
+var result = await _flutterBlePeripheralCentralPlugin.bleReadCharacteristic();
+
+//write characteristic
+var sendData = 'send data';
+await _flutterBlePeripheralCentralPlugin.bleWriteCharacteristic(sendData);
 ```
+
 ## Reference
 * alexanderlavrushko's BLEProof-collection Url: https://github.com/alexanderlavrushko/BLEProof-collection/
 
