@@ -22,7 +22,15 @@ class BLECentralHandler: NSObject, FlutterPlugin {
 
     let timeFormatter = DateFormatter()
 
-
+    /*
+            bluetoothNotReady
+            ConnectedSubscribing,
+            Disconnected,
+            Scanning,
+            Connecting,
+            ConnectedDiscovering,
+            Connected
+    */
     enum BLELifecycleState: String {
         case bluetoothNotReady
         case disconnected
@@ -221,6 +229,18 @@ extension BLECentralHandler {
         default:
             return bleCentral.state.stringValueOfCentral
         }
+    }
+
+    private func toJson(text: String) -> String {
+        return "{\"message\": \"\(text)\"}"
+    }
+
+    private func stateToJson(text: String) -> String {
+        return "{\"state\": \"\(text)\"}"
+    }
+
+    private func eventToJson(event: String, text: String) -> String {
+        return "{\"\(event)\": \"\(text)\"}"
     }
 }
 

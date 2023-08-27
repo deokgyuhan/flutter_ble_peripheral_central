@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:flutter_ble_peripheral_central/flutter_ble_peripheral_central.dart';
@@ -22,6 +23,8 @@ class _BLEPeripheralWidgetState extends State<BLEPeripheralWidget> {
   final _writeableText= TextEditingController();
 
   bool _isSwitchOn = false;
+
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
@@ -109,6 +112,7 @@ class _BLEPeripheralWidgetState extends State<BLEPeripheralWidget> {
                                 scale: 1.3,
                                 child: Switch(
                                   value: _isSwitchOn,
+                                  activeColor: CupertinoColors.activeBlue,
                                   onChanged: (value) {
                                     setState(() {
                                       _isSwitchOn = value;
@@ -249,9 +253,15 @@ class _BLEPeripheralWidgetState extends State<BLEPeripheralWidget> {
                 ),
                 child:
                 ListView.builder(
+                  controller: _scrollController,
                   itemCount: _events.length,
                   itemBuilder: (context, index) {
-                    return ListTile(title: Text(_events[index]));
+                    return ListTile(
+                        title: Text(
+                            _events[index],
+                          style: TextStyle(fontSize: 15,),
+                        )
+                    );
                   },
                 ),
               ),
@@ -274,9 +284,8 @@ class _BLEPeripheralWidgetState extends State<BLEPeripheralWidget> {
         .listen((event) {
 
       _eventStreamController.sink.add('-> '+event);
-      setState(() {
-        _events.add(event);
-      });
+
+      _addEvent(event);
 
       print('----------------------->event: ' + event);
 
@@ -288,6 +297,16 @@ class _BLEPeripheralWidgetState extends State<BLEPeripheralWidget> {
 
   void _stopAdvertising() async {
     await _flutterBlePeripheralCentralPlugin.stopBlePeripheralService();
+  }
+
+  // add the event
+  void _addEvent(String event) {
+    setState(() {
+      _events.add(event);
+    });
+
+    // Scroll to the end of the list
+    _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
   }
 
   // clear the log

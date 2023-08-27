@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:flutter_ble_peripheral_central/flutter_ble_peripheral_central.dart';
@@ -21,6 +23,8 @@ class _BLECentralWidgetState extends State<BLECentralWidget> {
   var _indicateText= TextEditingController();
 
   bool _isSwitchOn = false;
+
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
@@ -106,6 +110,7 @@ class _BLECentralWidgetState extends State<BLECentralWidget> {
                                 scale: 1.3,
                                 child: Switch(
                                   value: _isSwitchOn,
+                                  activeColor: CupertinoColors.activeBlue,
                                   onChanged: (value) {
                                     setState(() {
                                       _isSwitchOn = value;
@@ -264,9 +269,15 @@ class _BLECentralWidgetState extends State<BLECentralWidget> {
                 ),
                 child:
                 ListView.builder(
+                  controller: _scrollController,
                   itemCount: _events.length,
                   itemBuilder: (context, index) {
-                    return ListTile(title: Text(_events[index]));
+                    return ListTile(
+                        title: Text(
+                            _events[index],
+                          style: TextStyle(fontSize: 15,),
+                        )
+                    );
                   },
                 ),
               ),
@@ -278,9 +289,8 @@ class _BLECentralWidgetState extends State<BLECentralWidget> {
     );
   }
 
-  StreamSubscription<String>? _eventSubscription;
-
   void _bleScanAndConnect() async {
+    StreamSubscription<dynamic> _eventSubscription;
     _clearLog();
     _eventStreamController.sink.add('Starting...');
 
@@ -289,16 +299,15 @@ class _BLECentralWidgetState extends State<BLECentralWidget> {
         .listen((event) {
 
       _eventStreamController.sink.add('-> '+event);
-      setState(() {
-        _events.add(event);
-      });
+
+      _addEvent(event);
 
       print('----------------------->event: ' + event);
 
       // if (event == 'stopAdvertising') {
       //   _eventSubscription?.cancel();
       // }
-    }) as StreamSubscription<String>?;
+    });
   }
 
   void _bleReadCharacteristic() async {
@@ -316,6 +325,33 @@ class _BLECentralWidgetState extends State<BLECentralWidget> {
     await _flutterBlePeripheralCentralPlugin.bleDisconnect();
   }
 
+  // add the event
+  void _addEvent(String event) {
+    setState(() {
+      _events.add(event);
+    });
+
+    Map<String, dynamic> responseMap = jsonDecode(event);
+
+    if (responseMap.containsKey('message')) {
+      String message = responseMap['message'];
+      print('Message: $message');
+    } else if(responseMap.containsKey('state')) {
+      setState(() {
+        _lifecycleState.text = responseMap['state'];
+      });
+    } else if(responseMap.containsKey('onCharacteristicChanged')) {
+      setState(() {
+        _indicateText.text = responseMap['onCharacteristicChanged'];
+      });
+    } else {
+      print('Message key not found in the JSON response.');
+    }
+
+
+    // Scroll to the end of the list
+    _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+  }
 
   // clear the log
   void _clearLog() {
@@ -323,6 +359,7 @@ class _BLECentralWidgetState extends State<BLECentralWidget> {
       _events.clear();
     });
   }
+
   void _permissionCheck() async {
     if (Platform.isAndroid) {
       var permission = await Permission.location.request();

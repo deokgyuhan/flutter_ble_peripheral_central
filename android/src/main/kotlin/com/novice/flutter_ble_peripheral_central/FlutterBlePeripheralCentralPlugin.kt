@@ -141,14 +141,14 @@ class FlutterBlePeripheralCentralPlugin : FlutterPlugin, MethodCallHandler, Acti
             when (call.method) {
                 "bleReadCharacteristic" -> {
                     MethodResultHolderOfCentral.methodResult = result
-                    val sendData = call.argument<String>("sendData")
                     intent.action = "bleReadCharacteristic"
-                    intent.putExtra("ADDITIONAL_DATA", sendData)
                     activity?.startService(intent)
                 }
                 "bleWriteCharacteristic" -> {
                     MethodResultHolderOfCentral.methodResult = result
+                    val sendData = call.argument<String>("sendData")
                     intent.action = "bleWriteCharacteristic"
+                    intent.putExtra("ADDITIONAL_DATA", sendData)
                     activity?.startService(intent)
                 }
                 "bleDisconnect" -> {

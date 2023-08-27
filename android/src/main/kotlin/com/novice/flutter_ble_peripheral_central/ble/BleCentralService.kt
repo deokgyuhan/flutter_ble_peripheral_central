@@ -107,19 +107,20 @@ class BleCentralService: Service() {
     }
 
     enum class BLELifecycleState {
-        Disconnected,
-        Scanning,
-        Connecting,
-        ConnectedDiscovering,
-        ConnectedSubscribing,
-        Connected
+        bluetoothNotReady,
+        connectedSubscribing,
+        disconnected,
+        scanning,
+        connecting,
+        connectedDiscovering,
+        connected
     }
 
-    private var lifecycleState = BLELifecycleState.Disconnected
+    private var lifecycleState = BLELifecycleState.disconnected
 
         set(value) {
             field = value
-            eventSink?.success("status = $value")
+            eventSink?.success(stateToJson(value.toString()))
         }
 
     private val userWantsToScanAndConnect = true //switchConnect.isChecked
@@ -143,7 +144,7 @@ class BleCentralService: Service() {
         safeStopBleScan()
         connectedGatt?.close()
         setConnectedGattToNull()
-        lifecycleState = BLELifecycleState.Disconnected
+        lifecycleState = BLELifecycleState.disconnected
     }
 
     private fun setConnectedGattToNull() {
@@ -183,25 +184,25 @@ class BleCentralService: Service() {
     private fun safeStartBleScan() {
 //        eventSink?.success("BleCentralService safeStartBleScan  call")
         if (isScanning) {
-            eventSink?.success("Already scanning")
+            eventSink?.success(toJson("Already scanning"))
             return
         }
 
         val serviceFilter = scanFilter.serviceUuid?.uuid.toString()
-        eventSink?.success("Starting BLE scan, filter: $serviceFilter")
+        eventSink?.success(toJson("Starting BLE scan, filter: $serviceFilter"))
 
         isScanning = true
-        lifecycleState = BLELifecycleState.Scanning
+        lifecycleState = BLELifecycleState.scanning
         bleScanner.startScan(mutableListOf(scanFilter), scanSettings, scanCallback)
     }
 
     private fun safeStopBleScan() {
         if (!isScanning) {
-            eventSink?.success("Already stopped")
+            eventSink?.success(toJson("Already stopped"))
             return
         }
 
-        eventSink?.success("Stopping BLE scan")
+        eventSink?.success(toJson("Stopping BLE scan"))
         isScanning = false
         bleScanner.stopScan(scanCallback)
     }
@@ -210,7 +211,7 @@ class BleCentralService: Service() {
         val cccdUuid = UUID.fromString(CCC_DESCRIPTOR_UUID)
         characteristic.getDescriptor(cccdUuid)?.let { cccDescriptor ->
             if (!gatt.setCharacteristicNotification(characteristic, true)) {
-                eventSink?.success("ERROR: setNotification(true) failed for ${characteristic.uuid}")
+                eventSink?.success(toJson("ERROR: setNotification(true) failed for ${characteristic.uuid}"))
                 return
             }
             cccDescriptor.value = BluetoothGattDescriptor.ENABLE_INDICATION_VALUE
@@ -272,20 +273,20 @@ class BleCentralService: Service() {
     private val scanCallback = object : ScanCallback() {
         override fun onScanResult(callbackType: Int, result: ScanResult) {
             val name: String? = result.scanRecord?.deviceName ?: result.device.name
-            eventSink?.success("onScanResult name=$name address= ${result.device?.address}")
+            eventSink?.success(toJson("onScanResult name=$name address= ${result.device?.address}"))
             safeStopBleScan()
-            lifecycleState = BLELifecycleState.Connecting
+            lifecycleState = BLELifecycleState.connecting
             result.device.connectGatt(this@BleCentralService, false, gattCallback)
         }
 
         override fun onBatchScanResults(results: MutableList<ScanResult>?) {
-            eventSink?.success("onBatchScanResults, ignoring")
+            eventSink?.success(toJson("onBatchScanResults, ignoring"))
         }
 
         override fun onScanFailed(errorCode: Int) {
-            eventSink?.success("onScanFailed errorCode=$errorCode")
+            eventSink?.success(toJson("onScanFailed errorCode=$errorCode"))
             safeStopBleScan()
-            lifecycleState = BLELifecycleState.Disconnected
+            lifecycleState = BLELifecycleState.disconnected
             bleRestartLifecycle()
         }
     }
@@ -307,23 +308,23 @@ class BleCentralService: Service() {
                 if (status == BluetoothGatt.GATT_SUCCESS) {
                     if (newState == BluetoothProfile.STATE_CONNECTED) {
                         // recommended on UI thread https://punchthrough.com/android-ble-guide/
-                        eventSink?.success("Connected to $deviceAddress")
-                        lifecycleState = BLELifecycleState.ConnectedDiscovering
+                        eventSink?.success(eventToJson("onConnectionStateChange", "Connected to $deviceAddress"))
+                        lifecycleState = BLELifecycleState.connectedDiscovering
                         gatt.discoverServices()
                     } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
-                        eventSink?.success("Disconnected from $deviceAddress")
+                        eventSink?.success(eventToJson("onConnectionStateChange", "Disconnected from $deviceAddress"))
                         setConnectedGattToNull()
                         gatt.close()
-                        lifecycleState = BLELifecycleState.Disconnected
+                        lifecycleState = BLELifecycleState.disconnected
 
                         bleRestartLifecycle()
                     }
                 } else {
                     // TODO: random error 133 - close() and try reconnect
-                    eventSink?.success("ERROR: onConnectionStateChange status=$status deviceAddress=$deviceAddress, disconnecting")
+                    eventSink?.success(toJson("ERROR: onConnectionStateChange status=$status deviceAddress=$deviceAddress, disconnecting"))
                     setConnectedGattToNull()
                     gatt.close()
-                    lifecycleState = BLELifecycleState.Disconnected
+                    lifecycleState = BLELifecycleState.disconnected
 
                     bleRestartLifecycle()
                 }
@@ -338,18 +339,18 @@ class BleCentralService: Service() {
          */
         override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int) {
             handler.post {
-                eventSink?.success("onServicesDiscovered services.count=${gatt.services.size} status=$status")
+                eventSink?.success(eventToJson("onServicesDiscovered","onServicesDiscovered services.count=${gatt.services.size} status=$status"))
 
                 if (status == 129 /*GATT_INTERNAL_ERROR*/) {
                     // it should be a rare case, this article recommends to disconnect:
                     // https://medium.com/@martijn.van.welie/making-android-ble-work-part-2-47a3cdaade07
-                    eventSink?.success("ERROR: status=129 (GATT_INTERNAL_ERROR), disconnecting")
+                    eventSink?.success(toJson("ERROR: status=129 (GATT_INTERNAL_ERROR), disconnecting"))
                     gatt.disconnect()
                     return@post
                 }
 
                 val service = gatt.getService(UUID.fromString(SERVICE_UUID)) ?: run {
-                    eventSink?.success("ERROR: Service not found $SERVICE_UUID, disconnecting")
+                    eventSink?.success(toJson("ERROR: Service not found $SERVICE_UUID, disconnecting"))
                     gatt.disconnect()
                     return@post
                 }
@@ -363,11 +364,11 @@ class BleCentralService: Service() {
                     service.getCharacteristic(UUID.fromString(CHAR_FOR_INDICATE_UUID))
 
                 characteristicForIndicate?.let {
-                    lifecycleState = BLELifecycleState.ConnectedSubscribing
+                    lifecycleState = BLELifecycleState.connectedSubscribing
                     subscribeToIndications(it, gatt)
                 } ?: run {
-                    eventSink?.success("WARN: characteristic not found $CHAR_FOR_INDICATE_UUID")
-                    lifecycleState = BLELifecycleState.Connected
+                    eventSink?.success(toJson("WARN: characteristic not found $CHAR_FOR_INDICATE_UUID"))
+                    lifecycleState = BLELifecycleState.connected
                 }
             }
         }
@@ -377,16 +378,16 @@ class BleCentralService: Service() {
                 if (characteristic.uuid == UUID.fromString(CHAR_FOR_READ_UUID)) {
                     val strValue = characteristic.value.toString(Charsets.UTF_8)
                     val log = "onCharacteristicRead " + when (status) {
-                        BluetoothGatt.GATT_SUCCESS -> "OK, value=\"$strValue\""
+                        BluetoothGatt.GATT_SUCCESS -> "OK, value= $strValue"
                         BluetoothGatt.GATT_READ_NOT_PERMITTED -> "not allowed"
                         else -> "error $status"
                     }
-                    eventSink?.success(log)
+                    eventSink?.success(eventToJson("onCharacteristicRead", strValue))
                     //bleReadCharacteristic method call result
                     methodResult?.success(strValue)
                 } else {
-                    eventSink?.success("onCharacteristicRead unknown uuid $characteristic.uuid")
-                    methodResult?.success("onCharacteristicRead unknown uuid $characteristic.uuid")
+                    eventSink?.success(eventToJson("onCharacteristicRead","onCharacteristicRead unknown uuid $characteristic.uuid"))
+                    methodResult?.success(eventToJson("onCharacteristicRead","onCharacteristicRead unknown uuid $characteristic.uuid"))
                 }
             }
         }
@@ -395,27 +396,28 @@ class BleCentralService: Service() {
             handler.post {
                 if (characteristic.uuid == UUID.fromString(CHAR_FOR_WRITE_UUID)) {
                     val log: String = "onCharacteristicWrite " + when (status) {
-                        BluetoothGatt.GATT_SUCCESS -> "OK"
+                        BluetoothGatt.GATT_SUCCESS -> "OK, "+characteristic.value.toString(Charsets.UTF_8)
                         BluetoothGatt.GATT_WRITE_NOT_PERMITTED -> "not allowed"
                         BluetoothGatt.GATT_INVALID_ATTRIBUTE_LENGTH -> "invalid length"
                         else -> "error $status"
                     }
-                    eventSink?.success(log)
-                    methodResult?.success(log)
+                    eventSink?.success(eventToJson("onCharacteristicWrite", log))
+                    methodResult?.success(eventToJson("onCharacteristicWrite", log))
                 } else {
-                    eventSink?.success("onCharacteristicWrite unknown uuid $characteristic.uuid")
-                    methodResult?.success("onCharacteristicWrite unknown uuid $characteristic.uuid")
+                    eventSink?.success(eventToJson("onCharacteristicWrite", "onCharacteristicWrite unknown uuid $characteristic.uuid"))
+                    methodResult?.success(eventToJson("onCharacteristicWrite", "onCharacteristicWrite unknown uuid $characteristic.uuid"))
                 }
             }
         }
 
+        //peripheral indicate action event
         override fun onCharacteristicChanged(gatt: BluetoothGatt, characteristic: BluetoothGattCharacteristic) {
             handler.post {
                 if (characteristic.uuid == UUID.fromString(CHAR_FOR_INDICATE_UUID)) {
                     val strValue = characteristic.value.toString(Charsets.UTF_8)
-                    eventSink?.success("onCharacteristicChanged value=\"$strValue\"")
+                    eventSink?.success(eventToJson("onCharacteristicChanged", strValue))
                 } else {
-                    eventSink?.success("onCharacteristicChanged unknown uuid $characteristic.uuid")
+                    eventSink?.success(eventToJson("onCharacteristicChanged", "onCharacteristicChanged unknown uuid $characteristic.uuid"))
                 }
             }
         }
@@ -430,15 +432,15 @@ class BleCentralService: Service() {
                             true -> "Subscribed"
                             false -> "Not Subscribed"
                         }
-                        eventSink?.success("onDescriptorWrite $subscriptionText")
+                        eventSink?.success(eventToJson("onDescriptorWrite", "onDescriptorWrite $subscriptionText"))
                     } else {
-                        eventSink?.success("ERROR: onDescriptorWrite status=$status uuid=${descriptor.uuid} char=${descriptor.characteristic.uuid}")
+                        eventSink?.success(eventToJson("onDescriptorWrite", "ERROR: onDescriptorWrite status=$status uuid=${descriptor.uuid} char=${descriptor.characteristic.uuid}"))
                     }
 
                     // subscription processed, consider connection is ready for use
-                    lifecycleState = BLELifecycleState.Connected
+                    lifecycleState = BLELifecycleState.connected
                 } else {
-                    eventSink?.success("onDescriptorWrite unknown uuid $descriptor.characteristic.uuid")
+                    eventSink?.success(eventToJson("onDescriptorWrite", "onDescriptorWrite unknown uuid $descriptor.characteristic.uuid"))
                 }
             }
         }
@@ -478,13 +480,13 @@ class BleCentralService: Service() {
         override fun onReceive(context: Context, intent: Intent) {
             when (intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.STATE_OFF)) {
                 BluetoothAdapter.STATE_ON -> {
-                    eventSink?.success("onReceive: Bluetooth ON")
-                    if (lifecycleState == BLELifecycleState.Disconnected) {
+                    eventSink?.success(toJson("onReceive: Bluetooth ON"))
+                    if (lifecycleState == BLELifecycleState.disconnected) {
                         bleRestartLifecycle()
                     }
                 }
                 BluetoothAdapter.STATE_OFF -> {
-                    eventSink?.success("onReceive: Bluetooth OFF")
+                    eventSink?.success(toJson("onReceive: Bluetooth OFF"))
                     bleEndLifecycle()
                 }
             }
@@ -493,21 +495,21 @@ class BleCentralService: Service() {
 
     private fun ensureBluetoothCanBeUsed(completion: (Boolean, String) -> Unit) {
 
-        eventSink?.success("BleCentralService ensureBluetoothCanBeUsed  call")
+//        eventSink?.success("BleCentralService ensureBluetoothCanBeUsed  call")
 
         grantBluetoothCentralPermissions(AskType.AskOnce) { isGranted ->
             if (!isGranted) {
-                completion(false, "Bluetooth permissions denied")
+                completion(false, toJson("Bluetooth permissions denied"))
                 return@grantBluetoothCentralPermissions
             }
 
             enableBluetooth(AskType.AskOnce) { isEnabled ->
                 if (!isEnabled) {
-                    completion(false, "Bluetooth OFF")
+                    completion(false, toJson("Bluetooth OFF"))
                     return@enableBluetooth
                 }
 
-                completion(true, "Bluetooth ON, permissions OK, ready")
+                completion(true, toJson("Bluetooth ON, permissions OK, ready"))
             }
         }
     }
@@ -560,7 +562,7 @@ class BleCentralService: Service() {
     }
 
     private fun grantBluetoothCentralPermissions(askType: AskType, completion: (Boolean) -> Unit) {
-        eventSink?.success("BleCentralService grantBluetoothCentralPermissions call")
+//        eventSink?.success("BleCentralService grantBluetoothCentralPermissions call")
 
         val wantedPermissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             arrayOf(
@@ -598,6 +600,18 @@ class BleCentralService: Service() {
 
     private fun requestPermissionArray(activity: Activity, permissions: Array<String>, requestCode: Int) {
         ActivityCompat.requestPermissions(activity, permissions, requestCode)
+    }
+
+    private fun toJson(text: String): String {
+        return "{\"message\": \"$text\"}"
+    }
+
+    private fun stateToJson(text: String): String {
+        return "{\"state\": \"$text\"}"
+    }
+
+    private fun eventToJson(event: String, text: String): String {
+        return "{\"$event\": \"$text\"}"
     }
     //endregion
 }

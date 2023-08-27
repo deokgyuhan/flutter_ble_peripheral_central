@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_ble_peripheral_central_example/widget/ble_central_widget.dart';
 import 'package:flutter_ble_peripheral_central_example/widget/ble_peripheral_widget.dart';
 
-
 class HomeScreen extends StatelessWidget {
 
   HomeScreen({Key? key}) : super(key: key);
