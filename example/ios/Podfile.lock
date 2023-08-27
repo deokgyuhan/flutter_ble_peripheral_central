@@ -4,11 +4,14 @@ PODS:
     - Flutter
   - integration_test (0.0.1):
     - Flutter
+  - permission_handler_apple (9.1.1):
+    - Flutter
 
 DEPENDENCIES:
   - Flutter (from `Flutter`)
   - flutter_ble_peripheral_central (from `.symlinks/plugins/flutter_ble_peripheral_central/ios`)
   - integration_test (from `.symlinks/plugins/integration_test/ios`)
+  - permission_handler_apple (from `.symlinks/plugins/permission_handler_apple/ios`)
 
 EXTERNAL SOURCES:
   Flutter:
@@ -17,11 +20,14 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/flutter_ble_peripheral_central/ios"
   integration_test:
     :path: ".symlinks/plugins/integration_test/ios"
+  permission_handler_apple:
+    :path: ".symlinks/plugins/permission_handler_apple/ios"
 
 SPEC CHECKSUMS:
   Flutter: f04841e97a9d0b0a8025694d0796dd46242b2854
   flutter_ble_peripheral_central: 02ae8bd587ed84065f5a115c667f1dc365fd8773
   integration_test: 13825b8a9334a850581300559b8839134b124670
+  permission_handler_apple: e76247795d700c14ea09e3a2d8855d41ee80a2e6
 
 PODFILE CHECKSUM: 6b9eb94e9f98a329f2ef624b852a6e42d090af2b
 

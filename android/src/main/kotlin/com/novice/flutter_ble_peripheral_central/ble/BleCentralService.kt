@@ -382,7 +382,8 @@ class BleCentralService: Service() {
                         else -> "error $status"
                     }
                     eventSink?.success(log)
-                    methodResult?.success(log)
+                    //bleReadCharacteristic method call result
+                    methodResult?.success(strValue)
                 } else {
                     eventSink?.success("onCharacteristicRead unknown uuid $characteristic.uuid")
                     methodResult?.success("onCharacteristicRead unknown uuid $characteristic.uuid")
