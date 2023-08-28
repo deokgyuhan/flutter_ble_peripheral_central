@@ -33,34 +33,47 @@ class BlePeripheralService : Service() {
     private var eventSink: EventChannel.EventSink? = null
     private var sendData = ""
 
+    private var textForAdvertising = ""
+    private var textCharForRead = ""
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == "startBlePeripheralService") {
             eventSink = EventSinkHolderOfPeripheral.eventSink
-            startBlePeripheralSearvice()
-//            eventSink?.success("onStartCommand  startBlePeripheralService call")
+
+            textForAdvertising = intent?.getStringExtra("ADDITIONAL_DATA").toString()
+            textCharForRead = intent?.getStringExtra("ADDITIONAL_DATA_EXTRA").toString()
+
+            startBlePeripheralService()
+        } else if(intent?.action == "editTextCharForRead") {
+            methodResult = MethodResultHolderOfPeripheral.methodResult
+            textCharForRead = intent?.getStringExtra("ADDITIONAL_DATA").toString()
+            editTextCharForRead(textCharForRead)
         } else if(intent?.action == "sendIndicate") {
             methodResult = MethodResultHolderOfPeripheral.methodResult
             sendData = intent?.getStringExtra("ADDITIONAL_DATA").toString()
             sendIndicate(sendData)
         } else if(intent?.action == "stopBlePeripheralService") {
             methodResult = MethodResultHolderOfPeripheral.methodResult
-            stopBlePeripheralSearvice()
+            stopBlePeripheralService()
         }
 
         return START_STICKY
     }
 
-    private fun startBlePeripheralSearvice() {
-//        eventSink?.success("startBlePeripheralSearvice call")
+    private fun startBlePeripheralService() {
         prepareAndStartAdvertising()
     }
 
-    fun stopBlePeripheralSearvice() {
+    private fun stopBlePeripheralService() {
         bleStopAdvertising()
     }
 
 
-    fun sendIndicate(sendIndicate: String) {
+    private fun editTextCharForRead(editTex: String) {
+        methodResult?.success("success")
+    }
+
+    private fun sendIndicate(sendIndicate: String) {
         bleIndicate(sendIndicate)
     }
 
@@ -78,9 +91,7 @@ class BlePeripheralService : Service() {
     }
 
     private fun prepareAndStartAdvertising() {
-//        eventSink?.success("prepareAndStartAdvertising call")
         ensureBluetoothCanBeUsed { isSuccess, message ->
-//            eventSink?.success("ensureBluetoothCanBeUsed result: " + isSuccess)
             handler.post {
                 eventSink?.success(message)
                 if (isSuccess) {
@@ -126,18 +137,20 @@ class BlePeripheralService : Service() {
 
         val result = gattServer.addService(service)
         this.gattServer = gattServer
-        eventSink?.success("addService " + when(result) {
+        var log = "addService " + when(result) {
             true -> "OK"
             false -> "fail"
-        })
+        }
+
+        eventSink?.success(toJson(log))
     }
 
     private fun bleStopGattServer() {
         gattServer?.close()
         gattServer = null
 
-        eventSink?.success("gattServer closed")
-        methodResult?.success("gattServer closed")
+        eventSink?.success(toJson("gattServer closed"))
+        methodResult?.success(toJson("gattServer closed"))
     }
 
     private val bluetoothManager: BluetoothManager by lazy {
@@ -162,11 +175,12 @@ class BlePeripheralService : Service() {
     private val advertiseData = AdvertiseData.Builder()
         .setIncludeDeviceName(false) // don't include name, because if name size > 8 bytes, ADVERTISE_FAILED_DATA_TOO_LARGE
         .addServiceUuid(ParcelUuid(UUID.fromString(SERVICE_UUID)))
+//        .addServiceData(ParcelUuid(UUID.fromString(SERVICE_UUID)), textForAdvertising.toByteArray(Charsets.UTF_8)) // ADVERTISE_FAILED_DATA_TOO_LARGE
         .build()
 
     private val advertiseCallback = object : AdvertiseCallback() {
         override fun onStartSuccess(settingsInEffect: AdvertiseSettings) {
-            eventSink?.success("Advertise start success\n$SERVICE_UUID")
+            eventSink?.success(toJson("Advertise start success\n$SERVICE_UUID"))
         }
 
         override fun onStartFailure(errorCode: Int) {
@@ -178,7 +192,7 @@ class BlePeripheralService : Service() {
                 ADVERTISE_FAILED_FEATURE_UNSUPPORTED -> "\nADVERTISE_FAILED_FEATURE_UNSUPPORTED"
                 else -> ""
             }
-            eventSink?.success("Advertise start failed: errorCode=$errorCode $desc")
+            eventSink?.success(toJson("Advertise start failed: errorCode=$errorCode $desc"))
             isAdvertising = false
         }
     }
@@ -193,9 +207,9 @@ class BlePeripheralService : Service() {
         override fun onConnectionStateChange(device: BluetoothDevice, status: Int, newState: Int) {
             handler.post {
                 if (newState == BluetoothProfile.STATE_CONNECTED) {
-                    eventSink?.success("connected \nCentral did connect")
+                    eventSink?.success(stateToJson("connected"))
                 } else {
-                    eventSink?.success("disconnected\nCentral did disconnect")
+                    eventSink?.success(stateToJson("disconnected"))
                     subscribedDevices.remove(device)
                 }
             }
@@ -203,7 +217,7 @@ class BlePeripheralService : Service() {
 
         override fun onNotificationSent(device: BluetoothDevice, status: Int) {
             handler.post {
-                eventSink?.success("onNotificationSent status=$status")
+                eventSink?.success(eventToJson("onNotificationSent","onNotificationSent status=$status"))
             }
         }
 
@@ -217,22 +231,25 @@ class BlePeripheralService : Service() {
                         requestId,
                         BluetoothGatt.GATT_SUCCESS,
                         0,
-                        sendData.toByteArray(Charsets.UTF_8)
+                        textCharForRead.toByteArray(Charsets.UTF_8)
                     )
                 } else {
                     gattServer?.sendResponse(device, requestId, BluetoothGatt.GATT_FAILURE, 0, null)
                     log += "\nresponse=failure, unknown UUID\n${characteristic.uuid}"
                 }
-                eventSink?.success(log)
+//                eventSink?.success(toJson(log))
+                eventSink?.success(eventToJson("onCharacteristicRead", log))
             }
         }
 
         override fun onCharacteristicWriteRequest(device: BluetoothDevice, requestId: Int, characteristic: BluetoothGattCharacteristic, preparedWrite: Boolean, responseNeeded: Boolean, offset: Int, value: ByteArray?) {
-            handler.post {
+            var strValue = ""
+
+                handler.post {
                 var log: String =
                     "onCharacteristicWrite offset=$offset responseNeeded=$responseNeeded preparedWrite=$preparedWrite"
                 if (characteristic.uuid == UUID.fromString(CHAR_FOR_WRITE_UUID)) {
-                    var strValue = value?.toString(Charsets.UTF_8) ?: ""
+                    strValue = value?.toString(Charsets.UTF_8) ?: ""
                     if (responseNeeded) {
                         gattServer?.sendResponse(
                             device,
@@ -259,7 +276,8 @@ class BlePeripheralService : Service() {
                         log += "\nresponse=notNeeded, unknown UUID\n${characteristic.uuid}"
                     }
                 }
-                eventSink?.success(log)
+//                eventSink?.success(toJson(log))
+                eventSink?.success(eventToJson("onCharacteristicWriteRequest", strValue))
             }
         }
 
@@ -285,13 +303,14 @@ class BlePeripheralService : Service() {
                     log += " unknown uuid=${descriptor.uuid}"
                     gattServer?.sendResponse(device, requestId, BluetoothGatt.GATT_FAILURE, 0, null)
                 }
-                eventSink?.success(log)
+                eventSink?.success(eventToJson("onDescriptorReadRequest", log))
             }
         }
 
         override fun onDescriptorWriteRequest(device: BluetoothDevice, requestId: Int, descriptor: BluetoothGattDescriptor, preparedWrite: Boolean, responseNeeded: Boolean, offset: Int, value: ByteArray) {
             handler.post {
                 var strLog = "onDescriptorWriteRequest"
+                var state = ""
                 if (descriptor.uuid == UUID.fromString(CCC_DESCRIPTOR_UUID)) {
                     var status = BluetoothGatt.GATT_REQUEST_NOT_SUPPORTED
                     if (descriptor.characteristic.uuid == UUID.fromString(CHAR_FOR_INDICATE_UUID)) {
@@ -299,6 +318,7 @@ class BlePeripheralService : Service() {
                             subscribedDevices.add(device)
                             status = BluetoothGatt.GATT_SUCCESS
                             strLog += ", subscribed"
+                            state = "subscribed"
                         } else if (Arrays.equals(
                                 value,
                                 BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE
@@ -307,6 +327,7 @@ class BlePeripheralService : Service() {
                             subscribedDevices.remove(device)
                             status = BluetoothGatt.GATT_SUCCESS
                             strLog += ", unsubscribed"
+                            state = "unsubscribed"
                         }
                     }
                     if (responseNeeded) {
@@ -324,7 +345,8 @@ class BlePeripheralService : Service() {
                         )
                     }
                 }
-                eventSink?.success(strLog)
+                eventSink?.success(toJson(strLog))
+                eventSink?.success(stateToJson(state))
             }
         }
     }
@@ -343,17 +365,17 @@ class BlePeripheralService : Service() {
 //        eventSink?.success("ensureBluetoothCanBeUsed call")
         grantBluetoothPeripheralPermissions(AskType.AskOnce) { isGranted ->
             if (!isGranted) {
-                completion(false, "Bluetooth permissions denied")
+                completion(false, toJson("Bluetooth permissions denied"))
                 return@grantBluetoothPeripheralPermissions
             }
 
             enableBluetooth(AskType.AskOnce) { isEnabled ->
                 if (!isEnabled) {
-                    completion(false, "Bluetooth OFF")
+                    completion(false, toJson("Bluetooth OFF"))
                     return@enableBluetooth
                 }
 
-                completion(true, "BLE ready for use")
+                completion(true, toJson("BLE ready for use"))
             }
         }
     }
@@ -380,7 +402,6 @@ class BlePeripheralService : Service() {
     }
 
     private fun grantBluetoothPeripheralPermissions(askType: AskType, completion: (Boolean) -> Unit) {
-//        eventSink?.success("grantBluetoothPeripheralPermissions call")
         val wantedPermissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             arrayOf(
                 Manifest.permission.BLUETOOTH_CONNECT,
@@ -419,6 +440,18 @@ class BlePeripheralService : Service() {
 
     override fun onBind(p0: Intent?): IBinder? {
         TODO("Not yet implemented")
+    }
+
+    private fun toJson(text: String): String {
+        return "{\"message\": \"$text\"}"
+    }
+
+    private fun stateToJson(text: String): String {
+        return "{\"state\": \"$text\"}"
+    }
+
+    private fun eventToJson(event: String, text: String): String {
+        return "{\"$event\": \"$text\"}"
     }
     //endregion
 }

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -42,7 +43,12 @@ class _BLEPeripheralWidgetState extends State<BLEPeripheralWidget> {
   Widget build(BuildContext context) {
 
     return Scaffold(
-      appBar: AppBar(title: Text('BLE Peripheral View')),
+      appBar: AppBar(
+          title: Text(
+              'BLE Peripheral View',
+            style: TextStyle(fontSize: 27, fontWeight: FontWeight.bold),
+          )
+      ),
       body:  SingleChildScrollView(child: Column(
         children: [
           Padding(
@@ -69,6 +75,7 @@ class _BLEPeripheralWidgetState extends State<BLEPeripheralWidget> {
                           ),
                           contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 12,),
                         ),
+                        enabled: false,
                       ),
                     ),
                   ),
@@ -102,6 +109,7 @@ class _BLEPeripheralWidgetState extends State<BLEPeripheralWidget> {
                                 ),
                                 contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 12,),
                               ),
+                              enabled: Platform.isIOS ? true : false,
                             ),
                           ),
                           SizedBox(width: 10),
@@ -119,9 +127,9 @@ class _BLEPeripheralWidgetState extends State<BLEPeripheralWidget> {
                                     });
 
                                     if(_isSwitchOn) {
-                                      _startAdvertising();
+                                      _bleStartAdvertising(_advertisingText.text, _readableText.text);
                                     } else {
-                                      _stopAdvertising();
+                                      _bleStopAdvertising();
                                     }
                                   },
                                 ),
@@ -139,24 +147,42 @@ class _BLEPeripheralWidgetState extends State<BLEPeripheralWidget> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                      "Readable characteristic",
-                      style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+                    "Readable characteristic",
+                    style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
                   ),
                   SizedBox(height: 5),
                   SizedBox(
                     width: double.infinity,
-                    child: Container(
-                      width: MediaQuery.of(context).size.width*0.6,
-                      height: 45,
-                      child: TextField(
-                        controller: _readableText,
-                        decoration: InputDecoration(
-                          border: OutlineInputBorder(
-                            borderSide: BorderSide(color: Colors.grey),
+                    child: Row(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          Container(
+                            width: MediaQuery.of(context).size.width*0.67,
+                            height: 45,
+                            child: TextField(
+                              controller: _readableText,
+                              decoration: InputDecoration(
+                                // hintText: 'Input indicate value',
+                                border: OutlineInputBorder(
+                                  borderSide: BorderSide(color: Colors.grey),
+                                ),
+                                contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 12,),
+                              ),
+                            ),
                           ),
-                          contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 12,),
-                        ),
-                      ),
+                          SizedBox(width: 10,),
+                          Container(
+                            width: MediaQuery.of(context).size.width*0.25,
+                            height: 45,
+                            child:
+                            ElevatedButton(
+                              onPressed: () async {
+                                _bleEditTextCharForRead(_readableText.text);
+                              },
+                              child: Text('Edit'),
+                            ),
+                          ),
+                        ]
                     ),
                   ),
                 ],
@@ -199,7 +225,7 @@ class _BLEPeripheralWidgetState extends State<BLEPeripheralWidget> {
                             child:
                             ElevatedButton(
                               onPressed: () async {
-                                await _flutterBlePeripheralCentralPlugin.sendIndicate("");
+                                _bleIndicate(_indicateText.text);
                               },
                               child: Text('Send'),
                             ),
@@ -275,12 +301,12 @@ class _BLEPeripheralWidgetState extends State<BLEPeripheralWidget> {
 
   StreamSubscription<String>? _eventSubscription;
 
-  void _startAdvertising() async {
+  void _bleStartAdvertising(String advertisingText, String readableText) async {
     _clearLog();
     _eventStreamController.sink.add('Starting...');
 
     _eventSubscription = await _flutterBlePeripheralCentralPlugin
-        .startBlePeripheralService()
+        .startBlePeripheralService(advertisingText, readableText)
         .listen((event) {
 
       _eventStreamController.sink.add('-> '+event);
@@ -295,8 +321,16 @@ class _BLEPeripheralWidgetState extends State<BLEPeripheralWidget> {
     }) as StreamSubscription<String>?;
   }
 
-  void _stopAdvertising() async {
+  void _bleStopAdvertising() async {
     await _flutterBlePeripheralCentralPlugin.stopBlePeripheralService();
+  }
+
+  void _bleEditTextCharForRead(String readableText) async {
+    await _flutterBlePeripheralCentralPlugin.editTextCharForRead(readableText);
+  }
+
+  void _bleIndicate(String sendData) async {
+    await _flutterBlePeripheralCentralPlugin.sendIndicate(sendData);
   }
 
   // add the event
@@ -304,6 +338,23 @@ class _BLEPeripheralWidgetState extends State<BLEPeripheralWidget> {
     setState(() {
       _events.add(event);
     });
+
+    Map<String, dynamic> responseMap = jsonDecode(event);
+
+    if (responseMap.containsKey('message')) {
+      String message = responseMap['message'];
+      print('Message: $message');
+    } else if(responseMap.containsKey('state')) {
+      setState(() {
+        _bluetoothState.text = responseMap['state'];
+      });
+    } else if(responseMap.containsKey('onCharacteristicWriteRequest')) {
+      setState(() {
+        _writeableText.text = responseMap['onCharacteristicWriteRequest'];
+      });
+    } else {
+      print('Message key not found in the JSON response.');
+    }
 
     // Scroll to the end of the list
     _scrollController.jumpTo(_scrollController.position.maxScrollExtent);

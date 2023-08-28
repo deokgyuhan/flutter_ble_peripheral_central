@@ -28,7 +28,11 @@ abstract class FlutterBlePeripheralCentralPlatform extends PlatformInterface {
   }
 
   // peripheral begin
-  Stream<dynamic> startBlePeripheralService() {
+  Stream<dynamic> startBlePeripheralService(String textForAdvertising, String textCharForRead) {
+    throw UnimplementedError('platformVersion() has not been implemented.');
+  }
+
+  Future<String?> editTextCharForRead(String textCharForRead) {
     throw UnimplementedError('platformVersion() has not been implemented.');
   }
 

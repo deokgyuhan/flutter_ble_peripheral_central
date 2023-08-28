@@ -24,8 +24,14 @@ class MethodChannelFlutterBlePeripheralCentral extends FlutterBlePeripheralCentr
   }
 
   // peripheral begin
-  Stream<dynamic> startBlePeripheralService()  {
-    return eventChannelOfPeripheral.receiveBroadcastStream();
+  Stream<dynamic> startBlePeripheralService(String textForAdvertising, String textCharForRead)  {
+
+    return eventChannelOfPeripheral.receiveBroadcastStream([<String, dynamic>{'textForAdvertising': textForAdvertising}, <String, dynamic>{'textCharForRead': textCharForRead}]);
+  }
+
+  Future<String?> editTextCharForRead(String textCharForRead) async {
+    final result = await methodChannelOfPeripheral.invokeMethod<String>('editTextCharForRead', <String, dynamic>{'textCharForRead': textCharForRead});
+    return result;
   }
 
   Future<String?> sendIndicate(String sendData) async {

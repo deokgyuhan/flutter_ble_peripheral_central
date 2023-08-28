@@ -93,6 +93,22 @@ class FlutterBlePeripheralCentralPlugin : FlutterPlugin, MethodCallHandler, Acti
         eventChannelOfPeripheral?.setStreamHandler(object : EventChannel.StreamHandler {
             override fun onListen(p0: Any?, eventSink: EventChannel.EventSink) {
                 EventSinkHolderOfPeripheral.eventSink = eventSink
+
+                val argsMap = p0 as? Map<String, Any>
+                val textForAdvertising = argsMap?.get("textForAdvertising") as? String
+                val textCharForRead = argsMap?.get("textCharForRead") as? String
+
+                if (textForAdvertising != null) {
+                    intent.putExtra("ADDITIONAL_DATA", textForAdvertising)
+                }
+
+                if (textCharForRead != null) {
+                    intent.putExtra("ADDITIONAL_DATA_EXTRA", textCharForRead)
+                }
+
+                intent.putExtra("ADDITIONAL_DATA", textForAdvertising)
+                intent.putExtra("ADDITIONAL_DATA_EXTRA", textCharForRead)
+
                 intent.action = "startBlePeripheralService"
                 activity?.startService(intent)
             }
@@ -118,6 +134,13 @@ class FlutterBlePeripheralCentralPlugin : FlutterPlugin, MethodCallHandler, Acti
         methodChannelOfPeripheral = MethodChannel(_flutterPluginBinding!!.binaryMessenger, methodChannelOfBLEPeripheral)
         methodChannelOfPeripheral?.setMethodCallHandler { call, result ->
             when (call.method) {
+                "editTextCharForRead" -> {
+                    MethodResultHolderOfPeripheral.methodResult = result
+                    val textCharForRead = call.argument<String>("textCharForRead")
+                    intent.action = "editTextCharForRead"
+                    intent.putExtra("ADDITIONAL_DATA", textCharForRead)
+                    activity?.startService(intent)
+                }
                 "sendIndicate" -> {
                     MethodResultHolderOfPeripheral.methodResult = result
                     val sendData = call.argument<String>("sendData")

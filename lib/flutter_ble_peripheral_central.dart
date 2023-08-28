@@ -7,8 +7,12 @@ class FlutterBlePeripheralCentral {
   }
 
   // peripheral begin
-  Stream<dynamic> startBlePeripheralService()  {
-    return FlutterBlePeripheralCentralPlatform.instance.startBlePeripheralService();
+  Stream<dynamic> startBlePeripheralService(String textForAdvertising, String textCharForRead)  {
+    return FlutterBlePeripheralCentralPlatform.instance.startBlePeripheralService(textForAdvertising, textCharForRead);
+  }
+
+  Future<String?> editTextCharForRead(String textCharForRead) {
+    return FlutterBlePeripheralCentralPlatform.instance.editTextCharForRead(textCharForRead);
   }
 
   Future<String?> sendIndicate(String sendData) {
