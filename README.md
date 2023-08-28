@@ -79,12 +79,18 @@ final  _flutterBlePeripheralCentralPlugin = FlutterBlePeripheralCentral();
 var platformVersion = await _flutterBlePeripheralCentralPlugin.getPlatformVersion();
 
 //peripheral mode
+StreamSubscription<dynamic>? _eventSubscription;
+var advertisingText = "advertising data";   //only ios
+var readableText = "readable data";
+
 //start advertising
-var _eventSubscription;
-_eventSubscription = await _flutterBlePeripheralCentralPlugin.startBlePeripheralSearvice().listen((event) {
+_eventSubscription = await _flutterBlePeripheralCentralPlugin.startBlePeripheralService(advertisingText, readableText).listen((event) {
 //handle event 
 // ....
  });
+
+//editTextCharForRead
+await _flutterBlePeripheralCentralPlugin.editTextCharForRead(readableText);
 
 //sendIndicate
 var sendData = 'send data call';
@@ -95,7 +101,7 @@ await _flutterBlePeripheralCentralPlugin.stopBlePeripheralService();
 
 //central mode
 //scan and autoconnect
-var _eventSubscription;
+StreamSubscription<dynamic>? _eventSubscription;
 _eventSubscription = await _flutterBlePeripheralCentralPlugin.scanAndConnect().listen((event) {
 // handle event 
 // ....
