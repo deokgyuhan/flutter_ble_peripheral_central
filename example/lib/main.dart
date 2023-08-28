@@ -4,10 +4,3 @@ import 'package:flutter_ble_peripheral_central_example/view/home_screen.dart';
 void main() {
   runApp(MaterialApp(home: HomeScreen()));
 }
-
-//HomeScreen source code
-
-//BLEPeripheralWidget source code
-
-//BLECentralWidget source code
-
