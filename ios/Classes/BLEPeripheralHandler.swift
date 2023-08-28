@@ -20,7 +20,11 @@ class BLEPeripheralHandler: NSObject, FlutterPlugin {
     var subscribedCentrals = [CBCentral]()
 
     var sink: FlutterEventSink?
-
+    var current_result: FlutterResult?
+    
+    var textForAdvertising = ""
+    var textCharForRead = ""
+    
     let timeFormatter = DateFormatter()
 
     static func register(with registrar: FlutterPluginRegistrar) {
@@ -39,19 +43,33 @@ class BLEPeripheralHandler: NSObject, FlutterPlugin {
 extension BLEPeripheralHandler {
     func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
         switch call.method {
+        case "editTextCharForRead":
+            current_result = result
+            if let args = call.arguments as? Dictionary<String, Any>,
+                let text = args["textCharForRead"] as? String {
+                textCharForRead = text
+                let data = text.data(using: .utf8) ?? Data()
+                editTextCharForRead(editText: textCharForRead)
+                
+              } else {
+                result(FlutterError.init(code: "errorSetDebug", message: "data or format error", details: nil))
+              }
         case "sendIndicate":
+            current_result = result
             if let args = call.arguments as? Dictionary<String, Any>,
                 let text = args["sendData"] as? String {
                 let data = text.data(using: .utf8) ?? Data()
                 bleSendIndication(text)
-                result("BLE sendIndicate")
+                result("success")
               } else {
                 result(FlutterError.init(code: "errorSetDebug", message: "data or format error", details: nil))
               }
         case "stopBlePeripheralSearvice":
+            current_result = result
             bleStopAdvertising()
-            result("BLE advertising stopped")
+            result("success")
         default:
+            current_result = result
             result(FlutterMethodNotImplemented)
         }
     }
@@ -61,20 +79,30 @@ extension BLEPeripheralHandler: FlutterStreamHandler {
 
     func onListen(withArguments arguments: Any?, eventSink events: @escaping FlutterEventSink) -> FlutterError? {
         sink = events
-        startBleAdvertising()
-        print("onListen Call....");
+        
+        if let argsMap = arguments as? [String: Any],
+           let textAdvertising = argsMap["textForAdvertising"] as? String,
+           let textForRead = argsMap["textCharForRead"] as? String {
+            textForAdvertising = textAdvertising
+            textCharForRead = textForRead
+            startBleAdvertising(advertisingData: textForAdvertising)
+//           print("onListen Call....");
+        } else {
+            //
+        }
+    
       return nil
     }
 
 
-    @objc func startBleAdvertising() {
-        bleStartAdvertising("test")
+    @objc func startBleAdvertising(advertisingData: String) {
+        bleStartAdvertising(advertisingData)
     }
 
     func onCancel(withArguments arguments: Any?) -> FlutterError? {
         sink = nil
         bleStopAdvertising()
-        print("onCancel Call....");
+//        print("onCancel Call....");
         return nil
     }
 }
@@ -113,26 +141,31 @@ extension BLEPeripheralHandler {
     private func bleStartAdvertising(_ advertisementData: String) {
         let dictionary: [String: Any] = [CBAdvertisementDataServiceUUIDsKey: [uuidService],
                                          CBAdvertisementDataLocalNameKey: advertisementData]
-        print("---------------------------->bleStartAdverting call")
-
-        sink?("startAdvertising")
+        sink?(toJson(text: "startAdvertising"))
+        sink?(stateToJson(text: "connected"))
         blePeripheral.startAdvertising(dictionary)
     }
 
     private func bleStopAdvertising() {
-        sink?("stopAdvertising")
+        sink?(toJson(text: "stopAdvertising"))
+        sink?(stateToJson(text: "disconnected"))
         blePeripheral.stopAdvertising()
     }
+    
 
+    private func editTextCharForRead(editText: String) {
+        current_result?("success")
+    }
+    
     private func bleSendIndication(_ valueString: String) {
         guard let charForIndicate = charForIndicate else {
-            sink?("cannot indicate, characteristic is nil")
+            sink?(toJson(text: "cannot indicate, characteristic is nil"))
             return
         }
         let data = valueString.data(using: .utf8) ?? Data()
         let result = blePeripheral.updateValue(data, for: charForIndicate, onSubscribedCentrals: nil)
         let resultStr = result ? "true" : "false"
-        sink?("updateValue result = '\(resultStr)' value = '\(valueString)'")
+        sink?(toJson(text: "updateValue result = '\(resultStr)' value = '\(valueString)'"))
     }
 
     private func bleGetStatusString() -> String {
@@ -149,6 +182,18 @@ extension BLEPeripheralHandler {
             return blePeripheral.state.stringValueOfPeripheral
         }
     }
+
+    private func toJson(text: String) -> String {
+        return "{\"message\": \"\(text)\"}"
+    }
+
+    private func stateToJson(text: String) -> String {
+        return "{\"state\": \"\(text)\"}"
+    }
+
+    private func eventToJson(event: String, text: String) -> String {
+        return "{\"\(event)\": \"\(text)\"}"
+    }
 }
 
 // CBPeripheralManagerDelegate
@@ -157,31 +202,32 @@ extension BLEPeripheralHandler: CBPeripheralManagerDelegate {
         print("didUpdateState: \(peripheral.state.stringValueOfPeripheral)")
 
         if peripheral.state == .poweredOn {
-            sink?("adding BLE service")
+            sink?(eventToJson(event: "didStartAdvertising", text: "didStartAdvertising: adding BLE service"))
             blePeripheral.add(buildBLEService())
         }
     }
 
     func peripheralManagerDidStartAdvertising(_ peripheral: CBPeripheralManager, error: Error?) {
         if let error = error {
-            sink?("didStartAdvertising: error: \(error.localizedDescription)")
+            sink?(eventToJson(event: "didStartAdvertising", text: "didStartAdvertising: error: \(error.localizedDescription)"))
         } else {
-            sink?("didStartAdvertising: success")
+            sink?(eventToJson(event: "didStartAdvertising", text: "didStartAdvertising: success"))
         }
     }
 
     func peripheralManager(_ peripheral: CBPeripheralManager, didAdd service: CBService, error: Error?) {
         if let error = error {
-            sink?("didAddService: error: \(error.localizedDescription)")
+            sink?(eventToJson(event: "didAddService", text: "didAddService: error: \(error.localizedDescription)"))
         } else {
-            sink?("didAddService: success: \(service.uuid.uuidString)")
+            sink?(eventToJson(event: "didAddService", text: "didAddService: success: \(service.uuid.uuidString)"))
         }
     }
 
     func peripheralManager(_ peripheral: CBPeripheralManager,
                            central: CBCentral,
                            didSubscribeTo characteristic: CBCharacteristic) {
-        sink?("didSubscribeTo UUID: \(characteristic.uuid.uuidString)")
+        sink?(eventToJson(event: "didSubscribeTo", text: "didSubscribeTo UUID: \(characteristic.uuid.uuidString)"))
+        sink?(stateToJson(text: "subscribe"))
         if characteristic.uuid == uuidCharForIndicate {
             subscribedCentrals.append(central)
         }
@@ -190,20 +236,20 @@ extension BLEPeripheralHandler: CBPeripheralManagerDelegate {
     func peripheralManager(_ peripheral: CBPeripheralManager,
                            central: CBCentral,
                            didUnsubscribeFrom characteristic: CBCharacteristic) {
-        sink?("didUnsubscribeFrom UUID: \(characteristic.uuid.uuidString)")
+        sink?(eventToJson(event: "didUnsubscribeFrom", text: "didUnsubscribeFrom UUID: \(characteristic.uuid.uuidString)"))
+        sink?(stateToJson(text: "unsubscribe"))
         if characteristic.uuid == uuidCharForIndicate {
             subscribedCentrals.removeAll { $0.identifier == central.identifier }
         }
     }
 
     func peripheralManager(_ peripheral: CBPeripheralManager, didReceiveRead request: CBATTRequest) {
-        print("------------->didReceiveRead: ")
         var log = "didReceiveRead UUID: \(request.characteristic.uuid.uuidString)"
         log += "\noffset: \(request.offset)"
 
         switch request.characteristic.uuid {
         case uuidCharForRead:
-            let textValue =  "test~~~~~~~"
+            let textValue =  textCharForRead
             log += "\nresponding with success, value = '\(textValue)'"
             request.value = textValue.data(using: .utf8)
             blePeripheral.respond(to: request, withResult: .success)
@@ -211,20 +257,22 @@ extension BLEPeripheralHandler: CBPeripheralManagerDelegate {
             log += "\nresponding with attributeNotFound"
             blePeripheral.respond(to: request, withResult: .attributeNotFound)
         }
-        sink?(log)
+        sink?(eventToJson(event: "didReceiveRead", text: log))
     }
 
     func peripheralManager(_ peripheral: CBPeripheralManager, didReceiveWrite requests: [CBATTRequest]) {
+        var textValue = ""
         var log = "didReceiveWrite requests.count = \(requests.count)"
+
         requests.forEach { (request) in
             log += "\nrequest.offset: \(request.offset)"
             log += "\nrequest.char.UUID: \(request.characteristic.uuid.uuidString)"
             switch request.characteristic.uuid {
             case uuidCharForWrite:
                 let data = request.value ?? Data()
-                let textValue = String(data: data, encoding: .utf8) ?? ""
+                textValue = String(data: data, encoding: .utf8) ?? ""
 
-                sink?(textValue)
+                sink?(eventToJson(event: "onCharacteristicWriteRequest", text: textValue))
 
                 log += "\nresponding with success, value = '\(textValue)'"
                 blePeripheral.respond(to: request, withResult: .success)
@@ -233,11 +281,11 @@ extension BLEPeripheralHandler: CBPeripheralManagerDelegate {
                 blePeripheral.respond(to: request, withResult: .attributeNotFound)
             }
         }
-        sink?(log)
+        sink?(toJson(text: log))
     }
 
     func peripheralManagerIsReady(toUpdateSubscribers peripheral: CBPeripheralManager) {
-        sink?("isReadyToUpdateSubscribers")
+        sink?(toJson(text: "isReadyToUpdateSubscribers"))
     }
 }
 

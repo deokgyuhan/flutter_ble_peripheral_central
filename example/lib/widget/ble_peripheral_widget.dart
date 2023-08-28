@@ -299,9 +299,10 @@ class _BLEPeripheralWidgetState extends State<BLEPeripheralWidget> {
     );
   }
 
-  StreamSubscription<String>? _eventSubscription;
+  StreamSubscription<dynamic>? _eventSubscription;
 
   void _bleStartAdvertising(String advertisingText, String readableText) async {
+
     _clearLog();
     _eventStreamController.sink.add('Starting...');
 
@@ -314,11 +315,7 @@ class _BLEPeripheralWidgetState extends State<BLEPeripheralWidget> {
       _addEvent(event);
 
       print('----------------------->event: ' + event);
-
-      if (event == 'stopAdvertising') {
-        _eventSubscription?.cancel();
-      }
-    }) as StreamSubscription<String>?;
+    });
   }
 
   void _bleStopAdvertising() async {
@@ -348,6 +345,10 @@ class _BLEPeripheralWidgetState extends State<BLEPeripheralWidget> {
       setState(() {
         _bluetoothState.text = responseMap['state'];
       });
+
+      if (event == 'disconnected') {
+        _eventSubscription?.cancel();
+      }
     } else if(responseMap.containsKey('onCharacteristicWriteRequest')) {
       setState(() {
         _writeableText.text = responseMap['onCharacteristicWriteRequest'];

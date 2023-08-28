@@ -22,15 +22,6 @@ class BLECentralHandler: NSObject, FlutterPlugin {
 
     let timeFormatter = DateFormatter()
 
-    /*
-            bluetoothNotReady
-            ConnectedSubscribing,
-            Disconnected,
-            Scanning,
-            Connecting,
-            ConnectedDiscovering,
-            Connected
-    */
     enum BLELifecycleState: String {
         case bluetoothNotReady
         case disconnected
@@ -70,10 +61,11 @@ extension BLECentralHandler {
     func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
         switch call.method {
         case "bleReadCharacteristic":
+            current_result = result
             userWantsToScanAndConnect = true
             bleReadCharacteristic(uuid: uuidCharForRead)
-            current_result = result
         case "bleWriteCharacteristic":
+            current_result = result
             userWantsToScanAndConnect = true
             if let args = call.arguments as? Dictionary<String, Any>,
                 let text = args["sendData"] as? String {
@@ -84,9 +76,11 @@ extension BLECentralHandler {
                 result(FlutterError.init(code: "errorSetDebug", message: "data or format error", details: nil))
               }
         case "bleDisconnect":
+            current_result = result
             bleDisconnect()
             result("BLE Disconnect")
         default:
+            current_result = result
             result(FlutterMethodNotImplemented)
         }
     }
@@ -241,7 +235,7 @@ extension BLECentralHandler: CBCentralManagerDelegate {
     func centralManagerDidUpdateState(_ central: CBCentralManager) {
         appendLog("central didUpdateState: \(central.state.stringValueOfCentral)")
 
-        sink?(toJson(text: "central didUpdateState: \(central.state.stringValueOfCentral)"))
+        sink?(eventToJson(event: "didUpdateState", text: "central didUpdateState: \(central.state.stringValueOfCentral)"))
 
         bleRestartLifecycle()
     }
@@ -256,7 +250,7 @@ extension BLECentralHandler: CBCentralManagerDelegate {
         guard connectedPeripheral == nil else {
             appendLog("didDiscover ignored (connectedPeripheral already set)")
 
-            sink?(toJson(text: "didDiscover ignored (connectedPeripheral already set)"))
+            sink?(eventToJson(event: "didDiscover", text: "didDiscover ignored (connectedPeripheral already set)"))
 
             return
         }
@@ -268,7 +262,7 @@ extension BLECentralHandler: CBCentralManagerDelegate {
     func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
         appendLog("didConnect")
 
-        sink?(toJson(text: "didConnect"))
+        sink?(eventToJson(event: "didConnect", text: "didConnect"))
 
         lifecycleState = .connectedDiscovering
         peripheral.delegate = self
@@ -279,14 +273,14 @@ extension BLECentralHandler: CBCentralManagerDelegate {
         if peripheral === connectedPeripheral {
             appendLog("didFailToConnect")
 
-            sink?(toJson(text: "didFailToConnect"))
+            sink?(eventToJson(event: "didFailToConnect", text: "didFailToConnect"))
 
             connectedPeripheral = nil
             bleRestartLifecycle()
         } else {
             appendLog("didFailToConnect, unknown peripheral, ingoring")
 
-            sink?(toJson(text: "didFailToConnect, unknown peripheral, ingoring"))
+            sink?(eventToJson(event: "didFailToConnect", text: "didFailToConnect, unknown peripheral, ingoring"))
         }
     }
 
@@ -294,14 +288,14 @@ extension BLECentralHandler: CBCentralManagerDelegate {
         if peripheral === connectedPeripheral {
             appendLog("didDisconnect")
 
-            sink?(toJson(text: "didDisconnect"))
+            sink?(eventToJson(event: "didDisconnect", text: "didDisconnect"))
 
             connectedPeripheral = nil
             bleRestartLifecycle()
         } else {
             appendLog("didDisconnect, unknown peripheral, ingoring")
 
-            sink?(toJson(text: "didDisconnect, unknown peripheral, ingoring"))
+            sink?(eventToJson(event: "didDisconnect", text: "didDisconnect, unknown peripheral, ingoring"))
         }
     }
 }
@@ -311,7 +305,7 @@ extension BLECentralHandler: CBPeripheralDelegate {
         guard let service = peripheral.services?.first(where: { $0.uuid == uuidService }) else {
             appendLog("ERROR: didDiscoverServices, service NOT found\nerror = \(String(describing: error)), disconnecting")
 
-            sink?(toJson(text: "ERROR: didDiscoverServices, service NOT found\nerror = \(String(describing: error)), disconnecting"))
+            sink?(eventToJson(event: "didDiscoverServices",text: "ERROR: didDiscoverServices, service NOT found\nerror = \(String(describing: error)), disconnecting"))
 
             bleCentral.cancelPeripheralConnection(peripheral)
             return
@@ -319,7 +313,7 @@ extension BLECentralHandler: CBPeripheralDelegate {
 
         appendLog("didDiscoverServices, service found")
 
-        sink?(toJson(text: "didDiscoverServices, service found"))
+        sink?(eventToJson(event: "didDiscoverServices", text: "didDiscoverServices, service found"))
 
         peripheral.discoverCharacteristics([uuidCharForRead, uuidCharForWrite, uuidCharForIndicate], for: service)
     }
@@ -330,7 +324,7 @@ extension BLECentralHandler: CBPeripheralDelegate {
         if invalidatedServices.first(where: { $0.uuid == uuidService }) != nil {
             appendLog("disconnecting because peripheral removed the required service")
 
-            sink?(toJson(text: "disconnecting because peripheral removed the required service"))
+            sink?(eventToJson(event: "didModifyServices", text: "disconnecting because peripheral removed the required service"))
 
             bleCentral.cancelPeripheralConnection(peripheral)
         }
@@ -339,14 +333,14 @@ extension BLECentralHandler: CBPeripheralDelegate {
     func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {
         appendLog("didDiscoverCharacteristics \(error == nil ? "OK" : "error: \(String(describing: error))")")
 
-        sink?(toJson(text: "didDiscoverCharacteristics \(error == nil ? "OK" : "error: \(String(describing: error))")"))
+        sink?(eventToJson(event: "didDiscoverCharacteristics", text: "didDiscoverCharacteristics \(error == nil ? "OK" : "error: \(String(describing: error))")"))
 
         if let charIndicate = service.characteristics?.first(where: { $0.uuid == uuidCharForIndicate }) {
             peripheral.setNotifyValue(true, for: charIndicate)
         } else {
             appendLog("WARN: characteristic for indication not found")
 
-            sink?(toJson(text: "WARN: characteristic for indication not found"))
+            sink?(eventToJson(event: "didDiscoverCharacteristics", text: "WARN: characteristic for indication not found"))
 
             lifecycleState = .connected
         }
@@ -356,7 +350,7 @@ extension BLECentralHandler: CBPeripheralDelegate {
         guard error == nil else {
             appendLog("didUpdateValue error: \(String(describing: error))")
 
-            sink?(toJson(text: "didUpdateValue error: \(String(describing: error))"))
+            sink?(eventToJson(event: "didUpdateValue", text: "didUpdateValue error: \(String(describing: error))"))
 
             return
         }
@@ -366,9 +360,9 @@ extension BLECentralHandler: CBPeripheralDelegate {
 
         appendLog("didUpdateValue '\(stringValue)'")
 
-        sink?(toJson(text: "didUpdateValue '\(stringValue)'"))
+        sink?(eventToJson(event: "onCharacteristicChanged", text: stringValue))
 
-        current_result?("didUpdateValue '\(stringValue)'")
+        current_result?(stringValue)
     }
 
     func peripheral(_ peripheral: CBPeripheral,
@@ -376,7 +370,7 @@ extension BLECentralHandler: CBPeripheralDelegate {
                     error: Error?) {
         appendLog("didWrite \(error == nil ? "OK" : "error: \(String(describing: error))")")
 
-        sink?(toJson(text: "didWrite \(error == nil ? "OK" : "error: \(String(describing: error))")"))
+        sink?(eventToJson(event: "didWrite", text: "didWrite \(error == nil ? "OK" : "error: \(String(describing: error))")"))
     }
 
     func peripheral(_ peripheral: CBPeripheral,
@@ -385,7 +379,7 @@ extension BLECentralHandler: CBPeripheralDelegate {
         guard error == nil else {
             appendLog("didUpdateNotificationState error\n\(String(describing: error))")
 
-            sink?(toJson(text: "didUpdateNotificationState error\n\(String(describing: error))"))
+            sink?(eventToJson(event: "didUpdateNotificationState", text: "didUpdateNotificationState error\n\(String(describing: error))"))
 
             lifecycleState = .connected
             return
@@ -394,7 +388,7 @@ extension BLECentralHandler: CBPeripheralDelegate {
         if characteristic.uuid == uuidCharForIndicate {
             let info = characteristic.isNotifying ? "Subscribed" : "Not subscribed"
             appendLog(info)
-            sink?(info)
+            sink?(toJson(text: info))
         }
         lifecycleState = .connected
     }

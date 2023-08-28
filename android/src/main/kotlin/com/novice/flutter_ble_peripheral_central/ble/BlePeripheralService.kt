@@ -69,7 +69,7 @@ class BlePeripheralService : Service() {
     }
 
 
-    private fun editTextCharForRead(editTex: String) {
+    private fun editTextCharForRead(editText: String) {
         methodResult?.success("success")
     }
 

@@ -289,8 +289,9 @@ class _BLECentralWidgetState extends State<BLECentralWidget> {
     );
   }
 
+  StreamSubscription<dynamic>? _eventSubscription;
+
   void _bleScanAndConnect() async {
-    StreamSubscription<dynamic> _eventSubscription;
     _clearLog();
     _eventStreamController.sink.add('Starting...');
 
@@ -303,10 +304,6 @@ class _BLECentralWidgetState extends State<BLECentralWidget> {
       _addEvent(event);
 
       print('----------------------->event: ' + event);
-
-      // if (event == 'stopAdvertising') {
-      //   _eventSubscription?.cancel();
-      // }
     });
   }
 
@@ -340,6 +337,9 @@ class _BLECentralWidgetState extends State<BLECentralWidget> {
       setState(() {
         _lifecycleState.text = responseMap['state'];
       });
+      if (event == 'disconnected') {
+        _eventSubscription?.cancel();
+      }
     } else if(responseMap.containsKey('onCharacteristicChanged')) {
       setState(() {
         _indicateText.text = responseMap['onCharacteristicChanged'];
