@@ -1,4 +1,5 @@
 //https://github.com/deokgyuhan/flutter_ble_peripheral_central/tree/master/example/lib
+//example dependency => https://pub.dev/packages/permission_handler
 
 import 'dart:async';
 import 'dart:convert';
