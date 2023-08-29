@@ -1,3 +1,7 @@
+## 0.0.3
+
+* andorid -> message '\n' remove
+* 
 ## 0.0.2
 
 * README.MD -> screenshop add

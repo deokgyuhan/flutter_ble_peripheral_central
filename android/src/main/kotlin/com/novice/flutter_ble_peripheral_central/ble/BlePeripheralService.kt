@@ -180,16 +180,16 @@ class BlePeripheralService : Service() {
 
     private val advertiseCallback = object : AdvertiseCallback() {
         override fun onStartSuccess(settingsInEffect: AdvertiseSettings) {
-            eventSink?.success(toJson("Advertise start success\n$SERVICE_UUID"))
+            eventSink?.success(toJson("Advertise start success $SERVICE_UUID"))
         }
 
         override fun onStartFailure(errorCode: Int) {
             val desc = when (errorCode) {
-                ADVERTISE_FAILED_DATA_TOO_LARGE -> "\nADVERTISE_FAILED_DATA_TOO_LARGE"
-                ADVERTISE_FAILED_TOO_MANY_ADVERTISERS -> "\nADVERTISE_FAILED_TOO_MANY_ADVERTISERS"
-                ADVERTISE_FAILED_ALREADY_STARTED -> "\nADVERTISE_FAILED_ALREADY_STARTED"
-                ADVERTISE_FAILED_INTERNAL_ERROR -> "\nADVERTISE_FAILED_INTERNAL_ERROR"
-                ADVERTISE_FAILED_FEATURE_UNSUPPORTED -> "\nADVERTISE_FAILED_FEATURE_UNSUPPORTED"
+                ADVERTISE_FAILED_DATA_TOO_LARGE -> " - ADVERTISE_FAILED_DATA_TOO_LARGE"
+                ADVERTISE_FAILED_TOO_MANY_ADVERTISERS -> " - ADVERTISE_FAILED_TOO_MANY_ADVERTISERS"
+                ADVERTISE_FAILED_ALREADY_STARTED -> " - ADVERTISE_FAILED_ALREADY_STARTED"
+                ADVERTISE_FAILED_INTERNAL_ERROR -> " - ADVERTISE_FAILED_INTERNAL_ERROR"
+                ADVERTISE_FAILED_FEATURE_UNSUPPORTED -> " - ADVERTISE_FAILED_FEATURE_UNSUPPORTED"
                 else -> ""
             }
             eventSink?.success(toJson("Advertise start failed: errorCode=$errorCode $desc"))
@@ -235,7 +235,7 @@ class BlePeripheralService : Service() {
                     )
                 } else {
                     gattServer?.sendResponse(device, requestId, BluetoothGatt.GATT_FAILURE, 0, null)
-                    log += "\nresponse=failure, unknown UUID\n${characteristic.uuid}"
+                    log += "\nresponse=failure, unknown UUID - ${characteristic.uuid}"
                 }
 //                eventSink?.success(toJson(log))
                 eventSink?.success(eventToJson("onCharacteristicRead", log))
@@ -258,9 +258,9 @@ class BlePeripheralService : Service() {
                             0,
                             strValue.toByteArray(Charsets.UTF_8)
                         )
-                        log += "\nresponse=success, value=\"$strValue\""
+                        log += " - response=success, value=\"$strValue\""
                     } else {
-                        log += "\nresponse=notNeeded, value=\"$strValue\""
+                        log += " - response=notNeeded, value=\"$strValue\""
                     }
                 } else {
                     if (responseNeeded) {
@@ -271,9 +271,9 @@ class BlePeripheralService : Service() {
                             0,
                             null
                         )
-                        log += "\nresponse=failure, unknown UUID\n${characteristic.uuid}"
+                        log += " - response=failure, unknown UUID ${characteristic.uuid}"
                     } else {
-                        log += "\nresponse=notNeeded, unknown UUID\n${characteristic.uuid}"
+                        log += " - response=notNeeded, unknown UUID ${characteristic.uuid}"
                     }
                 }
 //                eventSink?.success(toJson(log))
@@ -455,4 +455,3 @@ class BlePeripheralService : Service() {
     }
     //endregion
 }
-
