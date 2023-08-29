@@ -1,6 +1,6 @@
 name: flutter_ble_peripheral_central
 description: flutter_ble_peripheral_central plugin project.
-version: 0.0.3
+version: 0.0.4
 homepage: https://github.com/deokgyuhan/flutter_ble_peripheral_central
 
 environment:
