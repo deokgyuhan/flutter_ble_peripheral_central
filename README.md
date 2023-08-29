@@ -2,7 +2,7 @@
 
 "flutter_ble_peripheral_central plugin project"
 
-## Introduction
+## 1. Introduction
 
 * This project is another initiative that is part of the process of exploring methods for data exchange between apps on cross-platforms using BLE.
 
@@ -18,7 +18,16 @@
  
 * Please note that the UUIDs and functionality lists are directly adopted from the BLEProof-collection.
 
-## Setup
+## 2. Screenshots
+
+
+| Home                                       | BLE Central                                       | BLE Peripheral                                     |
+|--------------------------------------------|---------------------------------------------------|----------------------------------------------------|
+| ![Home](screenshots/HomeScreen.png)        | ![BLE Central](screenshots/Central_View.png)      | ![BLE Peripheral](screenshots/Peripheral_View.png) |
+
+
+
+## 3. Setup
 
 **Android**
 
@@ -68,7 +77,7 @@
     <string>We use Bluetooth to show basic communication between Central and Peripheral</string>
     ````
 
-## Usage
+## 4. Usage
 ```dart
 import 'package:flutter_ble_peripheral_central/flutter_ble_peripheral_central.dart';
 
@@ -118,7 +127,7 @@ var sendData = 'send data';
 await _flutterBlePeripheralCentralPlugin.bleWriteCharacteristic(sendData);
 ```
 
-## Reference
+## - Reference -
 * alexanderlavrushko's BLEProof-collection Url: https://github.com/alexanderlavrushko/BLEProof-collection/
 
 ### Table of UUIDs
