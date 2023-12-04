@@ -25,8 +25,7 @@ class MethodChannelFlutterBlePeripheralCentral extends FlutterBlePeripheralCentr
 
   // peripheral begin
   Stream<dynamic> startBlePeripheralService(String textForAdvertising, String textCharForRead)  {
-
-    return eventChannelOfPeripheral.receiveBroadcastStream([<String, dynamic>{'textForAdvertising': textForAdvertising}, <String, dynamic>{'textCharForRead': textCharForRead}]);
+    return eventChannelOfPeripheral.receiveBroadcastStream(<String, dynamic>{'textForAdvertising': textForAdvertising, 'textCharForRead': textCharForRead});
   }
 
   Future<String?> editTextCharForRead(String textCharForRead) async {
