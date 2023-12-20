@@ -309,6 +309,8 @@ class BleCentralService: Service() {
                     if (newState == BluetoothProfile.STATE_CONNECTED) {
                         // recommended on UI thread https://punchthrough.com/android-ble-guide/
                         eventSink?.success(eventToJson("onConnectionStateChange", "Connected to $deviceAddress"))
+                        // request higher MTU value
+                        // gatt.requestMtu(517)
                         lifecycleState = BLELifecycleState.connectedDiscovering
                         gatt.discoverServices()
                     } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
@@ -369,6 +371,16 @@ class BleCentralService: Service() {
                 } ?: run {
                     eventSink?.success(toJson("WARN: characteristic not found $CHAR_FOR_INDICATE_UUID"))
                     lifecycleState = BLELifecycleState.connected
+                }
+            }
+        }
+
+        override fun onMtuChanged(gatt: BluetoothGatt, mtu: Int, status: Int) {
+            handler.post {
+                if (status == BluetoothGatt.GATT_SUCCESS) {
+                    eventSink?.success(eventToJson("MTU", mtu.toString()))
+                } else {
+                    eventSink?.success(eventToJson("MTU", "Coudlnt change"))
                 }
             }
         }
