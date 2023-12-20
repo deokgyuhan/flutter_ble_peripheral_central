@@ -59,8 +59,8 @@ extension BLEPeripheralHandler {
             if let args = call.arguments as? Dictionary<String, Any>,
                 let text = args["sendData"] as? String {
                 let data = text.data(using: .utf8) ?? Data()
-                bleSendIndication(text)
-                result("success")
+                let receivedAck = bleSendIndication(text)
+                result(receivedAck)
               } else {
                 result(FlutterError.init(code: "errorSetDebug", message: "data or format error", details: nil))
               }
@@ -157,15 +157,16 @@ extension BLEPeripheralHandler {
         current_result?("success")
     }
     
-    private func bleSendIndication(_ valueString: String) {
+    private func bleSendIndication(_ valueString: String) -> String {
         guard let charForIndicate = charForIndicate else {
             sink?(toJson(text: "cannot indicate, characteristic is nil"))
-            return
+            return "error"
         }
         let data = valueString.data(using: .utf8) ?? Data()
         let result = blePeripheral.updateValue(data, for: charForIndicate, onSubscribedCentrals: nil)
         let resultStr = result ? "true" : "false"
         sink?(toJson(text: "updateValue result = '\(resultStr)' value = '\(valueString)'"))
+        return resultStr
     }
 
     private func bleGetStatusString() -> String {
