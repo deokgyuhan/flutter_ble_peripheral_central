@@ -104,6 +104,8 @@ class BleCentralService: Service() {
     private fun bleDisconnect() {
         unregisterReceiver(bleOnOffListener)
         bleEndLifecycle()
+        eventSink?.success(toJson("BLE disconnected"))
+        methodResult?.success(toJson("BLE disconnected"))
     }
 
     enum class BLELifecycleState {
