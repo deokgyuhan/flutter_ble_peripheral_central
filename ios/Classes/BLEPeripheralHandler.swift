@@ -64,7 +64,7 @@ extension BLEPeripheralHandler {
               } else {
                 result(FlutterError.init(code: "errorSetDebug", message: "data or format error", details: nil))
               }
-        case "stopBlePeripheralSearvice":
+        case "stopBlePeripheralService":
             current_result = result
             bleStopAdvertising()
             result("success")
