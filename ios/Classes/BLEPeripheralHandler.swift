@@ -227,7 +227,7 @@ extension BLEPeripheralHandler: CBPeripheralManagerDelegate {
                            central: CBCentral,
                            didSubscribeTo characteristic: CBCharacteristic) {
         sink?(eventToJson(event: "didSubscribeTo", text: "didSubscribeTo UUID: \(characteristic.uuid.uuidString)"))
-        sink?(stateToJson(text: "subscribe"))
+        sink?(stateToJson(text: "subscribed"))
         if characteristic.uuid == uuidCharForIndicate {
             subscribedCentrals.append(central)
         }
