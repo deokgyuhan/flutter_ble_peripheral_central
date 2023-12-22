@@ -156,7 +156,7 @@ class BleCentralService: Service() {
 
     private fun bleRestartLifecycle() {
 //        eventSink?.success("BleCentralService bleRestartLifecycle  call")
-        prepareAndStartBleScan()
+        // prepareAndStartBleScan()
 
         handler.post {
             if (userWantsToScanAndConnect) {
@@ -270,13 +270,25 @@ class BleCentralService: Service() {
         .setReportDelay(0)
         .build()
 
+    fun refreshDeviceCache(gatt: BluetoothGatt) : Boolean {
+        try {
+            val refresh = gatt.javaClass.getMethod("refresh")
+            val success = refresh.invoke(gatt) as Boolean
+            eventSink?.success(toJson("Refresh successful"))
+            return success
+        } catch (e: Exception) {
+            eventSink?.success("ERROR: refresh ${e.message}")
+        }
+        return false
+    }
+
     private val scanCallback = object : ScanCallback() {
         override fun onScanResult(callbackType: Int, result: ScanResult) {
             val name: String? = result.scanRecord?.deviceName ?: result.device.name
             eventSink?.success(toJson("onScanResult name=$name address= ${result.device?.address}"))
             safeStopBleScan()
             lifecycleState = BLELifecycleState.connecting
-            result.device.connectGatt(this@BleCentralService, false, gattCallback)
+            result.device.connectGatt(this@BleCentralService, false, gattCallback, BluetoothDevice.TRANSPORT_LE)
         }
 
         override fun onBatchScanResults(results: MutableList<ScanResult>?) {
@@ -309,8 +321,10 @@ class BleCentralService: Service() {
                     if (newState == BluetoothProfile.STATE_CONNECTED) {
                         // recommended on UI thread https://punchthrough.com/android-ble-guide/
                         eventSink?.success(eventToJson("onConnectionStateChange", "Connected to $deviceAddress"))
-                        lifecycleState = BLELifecycleState.connectedDiscovering
-                        gatt.discoverServices()
+                        Handler(Looper.getMainLooper()).postDelayed({
+                            lifecycleState = BLELifecycleState.connectedDiscovering
+                            gatt.discoverServices()
+                        }, 5000)
                     } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                         eventSink?.success(eventToJson("onConnectionStateChange", "Disconnected from $deviceAddress"))
                         setConnectedGattToNull()
@@ -322,6 +336,7 @@ class BleCentralService: Service() {
                 } else {
                     // TODO: random error 133 - close() and try reconnect
                     eventSink?.success(toJson("ERROR: onConnectionStateChange status=$status deviceAddress=$deviceAddress, disconnecting"))
+                    refreshDeviceCache(gatt)
                     setConnectedGattToNull()
                     gatt.close()
                     lifecycleState = BLELifecycleState.disconnected
@@ -350,10 +365,11 @@ class BleCentralService: Service() {
                 }
 
                 val service = gatt.getService(UUID.fromString(SERVICE_UUID)) ?: run {
-                    eventSink?.success(toJson("ERROR: Service not found $SERVICE_UUID, disconnecting"))
-                    gatt.disconnect()
+                    eventSink?.success(toJson("ERROR: Service not found $SERVICE_UUID"))
+                    refreshDeviceCache(gatt)
                     return@post
                 }
+                eventSink?.success(toJson("Services found"))
 
                 connectedGatt = gatt
                 characteristicForRead =
